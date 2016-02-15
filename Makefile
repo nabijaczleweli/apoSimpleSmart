@@ -19,26 +19,34 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 include configMakefile
 
 
-LDAR = $(foreach subproj,$(SUBPROJS),-L./$(subproj) -l$(subproj)) -lbcl -lpdcurses -larmadillo
+OBJECTS := $(patsubst source/%.cpp,out/%.o,$(wildcard source/**.cpp))
 
 
-.PHONY : clean all $(SUBPROJS)
+.PHONY : clean all bcl
 
 
-all : aSS$(OBJ) $(foreach subproj,$(SUBPROJS),$(subproj)$(SUBPROJMARKER))
-	$(CPP) $(CPPAR) $(SYSLDAR) $(LDAR) *$(OBJ) -oapoSimpleSmart$(EXE)
-	$(STRIP) $(STRIPAR) apoSimpleSmart$(EXE) -oapoSimpleSmart$(EXE)
+all : bcl exe
 
 clean :
-	$(foreach subproj,$(SUBPROJS),$(MAKE) -C $(subproj) clean &&) $(nop)
-	rm -rf *$(OBJ) *$(EXE)
+	rm -rf out
+
+exe : $(OBJECTS)
+	$(CXX) $(CXXAR) -Idependencies $^ -oout/apoSimpleSmart$(EXE) $(LDAR)
+
+bcl : out/dependencies/libbcl$(ARCH)
+
+out/dependencies/libbcl$(ARCH) : $(foreach obj,rle shannonfano huffman rice lz,out/dependencies/bcl/src/$(obj)$(OBJ))
+	$(AR) cr $@ $^
 
 
-%$(OBJ) : %.cpp
-	$(CPP) $(CPPAR) $(foreach subproj,$(SUBPROJS),-I./$(subproj)) -c -o$@ $^
+out/%$(OBJ) : source/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXAR) -c -o$@ $^
 
-%$(SUBPROJMARKER) : %
-	$(MAKE) -C$^ all
+out/%$(OBJ) : %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CCAR) -c -o$@ $^

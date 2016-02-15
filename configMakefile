@@ -19,31 +19,17 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 ifeq "$(OS)" "Windows_NT"
-	EXE = .exe
-	SYSLDAR =
-	nop = echo > nul
-	DLL = .dll
+	EXE := .exe
 else
-	EXE = .out
-	SYSLDAR =
-	nop = echo > /dev/null
-	ifeq "$(OS)" "Darwin"
-		DLL = .dylib
-	else
-		DLL = .so
-	endif
+	EXE := .out
 endif
 
-OBJ = .o
-ARCH = .a
-AR = ar
-CPP = c++
-C = gcc
-CPPAR = -Os -fomit-frame-pointer -std=c++11 -Wall -Wextra -pipe
-# Is "-shared-libstdc++" OK? Does everything support that? Does it make sence?
-CAR = -Os -fomit-frame-pointer -std=c11 -Wall -Wextra -pipe
-STRIP = strip
-STRIPAR = --strip-all --remove-section=.comment --remove-section=.note
-SUBPROJMARKER = .SUBPROJ.DIR.MRKR
-SUBPROJS =
+OBJ := .o
+ARCH := .a
+AR := ar
+
+CXXAR := -O3 -std=c++14 -Wall -Wextra
+CCAR := -O3 -std=c11 -Wall -Wextra
+LDAR := -Lout/dependencies -lbcl -lpdcurses -larmadillo

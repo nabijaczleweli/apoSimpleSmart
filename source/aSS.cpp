@@ -28,11 +28,11 @@
 
 #include <tui.h>
 #include <armadillo>
-#include <bcl/huffman.h>
-#include <bcl/lz.h>
-#include <bcl/rice.h>
-#include <bcl/rle.h>
-#include <bcl/shannonfano.h>
+#include "bcl/src/huffman.h"
+#include "bcl/src/lz.h"
+#include "bcl/src/rice.h"
+#include "bcl/src/rle.h"
+#include "bcl/src/shannonfano.h"
 
 #include "exceptions.hpp"
 
