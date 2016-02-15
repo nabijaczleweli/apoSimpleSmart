@@ -1,0 +1,10 @@
+*
+!.gitignore
+!.travis.yml
+!LICENSE
+!README.md
+!*.sublime-project
+!sources
+!sources/**
+!resources
+!resources/**
