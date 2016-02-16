@@ -1,0 +1,39 @@
+{
+	"build_systems":
+	[
+		{
+			"working_dir": "$project_path",
+			"shell_cmd": "make",
+			"name": "Build apoSimpleSmart",
+		}
+	],
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"name": "Source",
+			"path": "source"
+		},
+		{
+			"follow_symlinks": true,
+			"name": "Build scripts",
+			"path": ".",
+			"file_include_patterns": ["*Makefile"],
+			"folder_exclude_patterns": ["*"]
+		},
+		{
+			"follow_symlinks": true,
+			"name": "Dependencies",
+			"path": "dependencies"
+		},
+		{
+			"follow_symlinks": true,
+			"name": "Resources",
+			"path": "resources"
+		},
+	],
+	"settings":
+	{
+		"tab_size": 2
+	}
+}
