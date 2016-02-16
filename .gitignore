@@ -5,7 +5,9 @@
 !LICENSE
 !README.md
 !*.sublime-project
-!sources
-!sources/**
+!source
+!source/**
 !resources
 !resources/**
+!dependencies
+!dependencies/**

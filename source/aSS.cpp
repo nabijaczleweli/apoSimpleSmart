@@ -29,13 +29,10 @@
 
 #include <tui.h>
 #include <armadillo>
-#include "bcl/src/huffman.h"
-#include "bcl/src/lz.h"
-#include "bcl/src/rice.h"
-#include "bcl/src/rle.h"
-#include "bcl/src/shannonfano.h"
 
 #include "exceptions.hpp"
+#include "compression.hpp"
+
 
 using namespace std;
 using namespace arma;
@@ -68,20 +65,6 @@ void display_tutorialscreen(WINDOW * parent_window);
 void display_highscorescreen(WINDOW * parent_window, uint8_t amount_of_highscores, const high_data * const highscores);
 void play_game(WINDOW * parent_window, high_data * const highscores);
 
-// Broken g++ workaround.
-template <class T>
-constexpr inline string to_string(T val);
-void crash_report();
-unsigned long int filesize(const char * const filename);
-
-enum compression_method : char { lz = 'l', flz = 'f', huffman = 'h', rice8 = '8', riceu8 = 'u', rle = 'r', sf = 's' };
-
-ostream & operator<<(ostream & strm, compression_method method) {
-	return strm << static_cast<char>(method);
-}
-
-game_data * load__game_data__from_file(game_data * const output_gd, const string & filename = "gd.dat");
-void save__game_data__to_file(const game_data * const input_gd, compression_method method, const string & filename = "gd.dat");
 
 struct high_data {
 	uint8_t length_of_name;
@@ -963,149 +946,3 @@ void display_highscorescreen(WINDOW * parent_window, uint8_t amount_of_highscore
 }
 
 void play_game(WINDOW * parent_window, high_data * const highscores) {}
-
-
-// Broken g++ workaround.
-template <class T>
-constexpr inline string to_string(T val) {
-	return static_cast<ostringstream &>(ostringstream() << val).str();
-}
-
-void crash_report() {
-	time_t time_now(time(nullptr));
-	char *time_str = new char[18], *filename;
-
-	const int written = strftime(time_str, 18, "%d.%m.%y %I:%M:%S", localtime(&time_now));
-
-	freopen(filename = const_cast<char *>(("crash." + to_string(clock()) + ".log").c_str()), "w", stderr);
-	fprintf(stderr, "Crash report from %s.\nPlease contact the below listed e-mail or poke me on https://github.com/nabijaczleweli.\n\n",
-	        written ? time_str : "<<time unknown>>");
-	fflush(stderr);
-
-	delete[] time_str;
-	time_str = nullptr;
-	time_now = -1;
-}
-
-unsigned long int filesize(const char * const filename) {
-	ifstream file(filename, ios::binary);
-	streampos fsize = file.tellg();
-	file.seekg(0, ios::end);
-	return file.tellg() - fsize;
-}
-
-
-game_data * load__game_data__from_file(game_data * const output_gd, const string & filename) {
-	compression_method theremethod;
-	const unsigned long int length = filesize(filename.c_str()) - 1;
-	unsigned char * inbuffer;
-	try {
-		inbuffer = new unsigned char[length];
-	} catch(const bad_alloc &) {
-		return output_gd;
-	}
-
-	ifstream(filename, ios::binary).get(reinterpret_cast<char &>(theremethod)).read(static_cast<char *>(static_cast<void *>(inbuffer)), length);
-	theremethod = static_cast<compression_method>(theremethod ^ '\xaa');
-	switch(theremethod) {
-		case compression_method::rle:
-			RLE_Uncompress(inbuffer, static_cast<unsigned char *>(static_cast<void *>(output_gd)), length);
-			break;
-		case compression_method::sf:
-			SF_Uncompress(inbuffer, static_cast<unsigned char *>(static_cast<void *>(output_gd)), length, GAME_DATA__SERIALIZATION_SIZE);
-			break;
-		case compression_method::huffman:
-			Huffman_Uncompress(inbuffer, static_cast<unsigned char *>(static_cast<void *>(output_gd)), length, GAME_DATA__SERIALIZATION_SIZE);
-			break;
-		case compression_method::rice8:
-			Rice_Uncompress(inbuffer, static_cast<unsigned char *>(static_cast<void *>(output_gd)), length, GAME_DATA__SERIALIZATION_SIZE, RICE_FMT_INT8);
-			break;
-		case compression_method::riceu8:
-			Rice_Uncompress(inbuffer, static_cast<unsigned char *>(static_cast<void *>(output_gd)), length, GAME_DATA__SERIALIZATION_SIZE, RICE_FMT_UINT8);
-			break;
-		case compression_method::flz:
-		case compression_method::lz:
-			LZ_Uncompress(inbuffer, static_cast<unsigned char *>(static_cast<void *>(output_gd)), length);
-			break;
-	}
-
-	memset(inbuffer, length, '\0');
-	delete[] inbuffer;
-	inbuffer = nullptr;
-
-	return output_gd;
-}
-
-void save__game_data__to_file(const game_data * const input_gd, compression_method method, const string & filename) {
-	unsigned int outbuflength;
-	switch(method) {
-		case compression_method::rle:
-			outbuflength = static_cast<unsigned int>(ceil(static_cast<double>(GAME_DATA__SERIALIZATION_SIZE) * (257.0 / 256.0))) + 1;
-			break;
-		case compression_method::sf:
-			outbuflength = static_cast<unsigned int>(ceil(static_cast<double>(GAME_DATA__SERIALIZATION_SIZE) * (101.0 / 100.0))) + 384;
-			break;
-		case compression_method::huffman:
-			outbuflength = static_cast<unsigned int>(ceil(static_cast<double>(GAME_DATA__SERIALIZATION_SIZE) * (101.0 / 100.0))) + 320;
-			break;
-		case compression_method::rice8:
-		case compression_method::riceu8:
-			outbuflength = GAME_DATA__SERIALIZATION_SIZE + 320;
-			break;
-		case compression_method::lz:
-		case compression_method::flz:
-			outbuflength = static_cast<unsigned int>(ceil(static_cast<double>(GAME_DATA__SERIALIZATION_SIZE) * (257.0 / 256.0))) + 1;
-			break;
-		default:
-			crash_report();
-			throw simplesmart_exception("Wrong `method` enum value passed to `save__game_data__to_file` (it being: \'" +
-			                            to_string(static_cast<compression_method>(method)) + "\').");
-	}
-	unsigned char * outbuffer = new unsigned char[outbuflength];
-
-	int destLen;
-	switch(method) {
-		case compression_method::rle:
-			destLen = RLE_Compress(static_cast<unsigned char *>(static_cast<void *>(const_cast<game_data *>(input_gd))), outbuffer, GAME_DATA__SERIALIZATION_SIZE);
-			break;
-		case compression_method::sf:
-			destLen = SF_Compress(static_cast<unsigned char *>(static_cast<void *>(const_cast<game_data *>(input_gd))), outbuffer, GAME_DATA__SERIALIZATION_SIZE);
-			break;
-		case compression_method::huffman:
-			destLen =
-			    Huffman_Compress(static_cast<unsigned char *>(static_cast<void *>(const_cast<game_data *>(input_gd))), outbuffer, GAME_DATA__SERIALIZATION_SIZE);
-			break;
-		case compression_method::rice8:
-			destLen = Rice_Compress(static_cast<unsigned char *>(static_cast<void *>(const_cast<game_data *>(input_gd))), outbuffer, GAME_DATA__SERIALIZATION_SIZE,
-			                        RICE_FMT_INT8);
-			break;
-		case compression_method::riceu8:
-			destLen = Rice_Compress(static_cast<unsigned char *>(static_cast<void *>(const_cast<game_data *>(input_gd))), outbuffer, GAME_DATA__SERIALIZATION_SIZE,
-			                        RICE_FMT_UINT8);
-			break;
-		case compression_method::flz: {
-			unsigned int * work_memory = new unsigned int[outbuflength + 65536];
-			destLen = LZ_CompressFast(static_cast<unsigned char *>(static_cast<void *>(const_cast<game_data *>(input_gd))), outbuffer, GAME_DATA__SERIALIZATION_SIZE,
-			                          work_memory);
-			memset(work_memory, outbuflength + 65536, 0);
-			delete[] work_memory;
-			work_memory = nullptr;
-		} break;
-		case compression_method::lz:
-			destLen = LZ_Compress(static_cast<unsigned char *>(static_cast<void *>(const_cast<game_data *>(input_gd))), outbuffer, GAME_DATA__SERIALIZATION_SIZE);
-			break;
-		default:
-			memset(outbuffer, outbuflength, '\0');
-			delete[] outbuffer;
-			outbuffer = nullptr;
-
-			crash_report();
-			throw simplesmart_exception("Wrong `method` enum value passed to `save__game_data__to_file` (it being: \'" +
-			                            to_string(static_cast<compression_method>(method)) + "\').");
-	}
-	ofstream(filename, ios::binary).put(method ^ '\xaa').write(static_cast<char *>(static_cast<void *>(outbuffer)), destLen);
-
-	memset(outbuffer, outbuflength, '\0');
-	delete[] outbuffer;
-	outbuffer = nullptr;
-}

@@ -35,7 +35,7 @@ clean :
 	rm -rf out
 
 exe : $(OBJECTS)
-	$(CXX) $(CXXAR) -Idependencies $^ -oout/apoSimpleSmart$(EXE) $(LDAR)
+	$(CXX) $(CXXAR) $^ -oout/apoSimpleSmart $(LDAR)
 
 bcl : out/dependencies/libbcl$(ARCH)
 
@@ -45,7 +45,7 @@ out/dependencies/libbcl$(ARCH) : $(foreach obj,rle shannonfano huffman rice lz,o
 
 out/%$(OBJ) : source/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) -c -o$@ $^
+	$(CXX) $(CXXAR) -Idependencies -c -o$@ $^
 
 out/%$(OBJ) : %.c
 	@mkdir -p $(dir $@)

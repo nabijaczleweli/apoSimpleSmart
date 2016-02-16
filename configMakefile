@@ -20,12 +20,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-ifeq "$(OS)" "Windows_NT"
-	EXE := .exe
-else
-	EXE := .out
-endif
-
 OBJ := .o
 ARCH := .a
 AR := ar

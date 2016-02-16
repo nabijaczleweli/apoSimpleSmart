@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 
-// Copyright (c) 2014 nabijaczleweli
+// Copyright (c) 2016 nabijaczleweli
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -23,21 +23,18 @@
 #pragma once
 
 
-#include <stdexcept>
 #include <string>
+#include <ostream>
 
 
-class simplesmart_exception : public std::exception {
-private:
-	std::string message;
+struct game_data;
+struct high_data;
 
-public:
-	simplesmart_exception(const char * const msg);
-	simplesmart_exception(const std::string & msg);
-	simplesmart_exception(const simplesmart_exception & exc);
-	simplesmart_exception(simplesmart_exception && exc);
 
-	const char * what() const noexcept;
-};
+enum compression_method : char { lz = 'l', flz = 'f', huffman = 'h', rice8 = '8', riceu8 = 'u', rle = 'r', sf = 's' };
 
-void crash_report();
+game_data * load__game_data__from_file(game_data * const output_gd, const std::string & filename = "gd.dat");
+void save__game_data__to_file(const game_data * const input_gd, compression_method method, const std::string & filename = "gd.dat");
+
+
+std::ostream & operator<<(std::ostream & strm, compression_method method);
