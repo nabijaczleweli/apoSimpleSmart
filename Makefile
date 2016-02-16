@@ -26,7 +26,7 @@ include configMakefile
 OBJECTS := $(patsubst source/%.cpp,out/%.o,$(wildcard source/**.cpp))
 
 
-.PHONY : clean all bcl
+.PHONY : all clean exe bcl
 
 
 all : bcl exe
