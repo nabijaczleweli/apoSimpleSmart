@@ -26,10 +26,10 @@ include configMakefile
 OBJECTS := $(patsubst source/%.cpp,out/%.o,$(wildcard source/**.cpp))
 
 
-.PHONY : all clean exe bcl
+.PHONY : all clean exe
 
 
-all : bcl exe
+all : exe
 
 clean :
 	rm -rf out
@@ -37,16 +37,7 @@ clean :
 exe : $(OBJECTS)
 	$(CXX) $(CXXAR) $^ -oout/apoSimpleSmart $(LDAR)
 
-bcl : out/dependencies/libbcl$(ARCH)
-
-out/dependencies/libbcl$(ARCH) : $(foreach obj,rle shannonfano huffman rice lz,out/dependencies/bcl/src/$(obj)$(OBJ))
-	$(AR) cr $@ $^
-
 
 out/%$(OBJ) : source/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) -Idependencies -c -o$@ $^
-
-out/%$(OBJ) : %.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CCAR) -c -o$@ $^
+	$(CXX) $(CXXAR) -Idependencies/cereal/include -c -o$@ $^
