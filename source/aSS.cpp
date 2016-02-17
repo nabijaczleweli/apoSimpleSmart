@@ -30,6 +30,7 @@
 #include <armadillo>
 
 #include "config.hpp"
+#include "game_data.hpp"
 #include "exceptions.hpp"
 #include "compression.hpp"
 
@@ -42,20 +43,11 @@ using namespace arma;
 #define TAB '\x09'
 #define CARRIAGE_RETURN '\x0d'
 
-#define GAME_DATA__NAME_MAX 33
-#define GAME_DATA__HIGHSCORE_MAX_AMOUNT 10
-
-#define HIGH_DATA__SERIALIZATION_SIZE (sizeof(uint8_t) + GAME_DATA__NAME_MAX + sizeof(uint32_t) + sizeof(uint16_t))
-#define GAME_DATA__SERIALIZATION_SIZE \
-	(sizeof(uint8_t) + GAME_DATA__NAME_MAX + sizeof(uint8_t) + GAME_DATA__HIGHSCORE_MAX_AMOUNT * HIGH_DATA__SERIALIZATION_SIZE)
-
 #define COLOR_PAIR_BLUE 1
 #define COLOR_PAIR_RED 2
 #define COLOR_PAIR_GREEN 3
 #define COLOR_PAIR_WHITE 4
 
-struct game_data;
-struct high_data;
 enum mainscreen_selection : char { start, tutorial, quit, credits, options, highscore };
 
 mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_apo_in);
@@ -65,27 +57,6 @@ void display_tutorialscreen(WINDOW * parent_window);
 void display_highscorescreen(WINDOW * parent_window, uint8_t amount_of_highscores, const high_data * const highscores);
 void play_game(WINDOW * parent_window, high_data * const highscores);
 
-
-struct high_data {
-	uint8_t length_of_name;
-	char name[GAME_DATA__NAME_MAX];
-	uint32_t score;
-	uint16_t level;
-};
-
-struct game_data {
-	uint8_t length_of_name;
-	char name[GAME_DATA__NAME_MAX];
-	uint8_t amount_of_highscores;
-	high_data highscore[GAME_DATA__HIGHSCORE_MAX_AMOUNT];
-
-	game_data() {
-		char * const dis = static_cast<char *>(static_cast<void *>(this));
-		memset(dis, GAME_DATA__SERIALIZATION_SIZE, '\x41');
-		length_of_name       = 0;
-		amount_of_highscores = 0;
-	}
-};
 
 constexpr static const chtype right_pointing_moving_thing = ')';
 constexpr static const chtype left_pointing_moving_thing  = 'C';

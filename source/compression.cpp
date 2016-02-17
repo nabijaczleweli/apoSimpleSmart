@@ -33,14 +33,7 @@
 #include "bcl/src/shannonfano.h"
 
 #include "exceptions.hpp"
-
-
-#define GAME_DATA__NAME_MAX 33
-#define GAME_DATA__HIGHSCORE_MAX_AMOUNT 10
-
-#define HIGH_DATA__SERIALIZATION_SIZE (sizeof(uint8_t) + GAME_DATA__NAME_MAX + sizeof(uint32_t) + sizeof(uint16_t))
-#define GAME_DATA__SERIALIZATION_SIZE \
-	(sizeof(uint8_t) + GAME_DATA__NAME_MAX + sizeof(uint8_t) + GAME_DATA__HIGHSCORE_MAX_AMOUNT * HIGH_DATA__SERIALIZATION_SIZE)
+#include "game_data.hpp"
 
 
 using namespace std;
