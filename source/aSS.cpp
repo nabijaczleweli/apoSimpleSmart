@@ -23,13 +23,13 @@
 #include <fstream>
 #include <iostream>
 #include <cstring>
-#include <unordered_map>
 #include <cstdlib>
 #include <cstdio>
 
 #include <tui.h>
 #include <armadillo>
 
+#include "config.hpp"
 #include "exceptions.hpp"
 #include "compression.hpp"
 
@@ -93,213 +93,11 @@ constexpr static const chtype up_pointing_moving_thing    = '^';
 constexpr static const chtype down_pointing_moving_thing  = 'U';
 
 
-int main(int, const char * argv[]) {
-	string configfilename = "simple_smart.cfg";
-	for(unsigned int idx = 1; argv[idx]; ++idx) {
-		const char * const arg    = argv[idx];
-		const unsigned int arglen = strlen(arg);
-		if(*arg == '-' && arg[1]) {
-			if(arglen >= 13 && !memcmp(arg, "--configfile=", 13)) {
-				if(arglen == 13) {
-					cerr << *argv << ": error: missing filename after \'--configfile=\'\n";
-					return 1;
-				}
-				configfilename = arg + 13;
-			} else if(arglen >= 2 && !memcmp(arg, "-c", 2)) {
-				if(arglen == 2) {
-					if(!argv[idx + 1]) {
-						cerr << *argv << ": error: missing filename after \'-c\'\n";
-						return 1;
-					}
-					configfilename = argv[idx + 1];
-					++idx;
-				} else
-					configfilename = arg + 2;
-			} else if(arglen >= 6 && !memcmp(arg, "--help", 6)) {
-				if(arglen == 6) {
-					cout << "Usage: " << *argv << " [options]\n"
-					                              "Options:\n"
-					                              "  --help                    Display this information\n"
-					                              "  --help-compression-format Display information about allowed compression mechanisms\n"
-					                              "  --configfile=<file>       Use config file file; Default: simple_smart.cfg\n"
-					                              "  -c <file>                 Use config file file; Default: simple_smart.cfg\n"
-					                              "\n"
-					                              "For bug reporting instructions, please see:\n"
-					                              "<https://github.com/nabijaczleweli>.\n";
-				} else if(arglen == 25 && !memcmp(arg + 6, "-compression-format", 19)) {
-					cout << "Compression format list.\n"
-					        "\n"
-					        "\'"
-					     << compression_method::lz << "\' means LZ_Compress for compression and LZ_Uncompress for decompression.\n"
-					                                  "    It implies using the LZ algorithm.\n\n"
-					                                  "\'"
-					     << compression_method::flz << "\' means LZ_CompressFast for compression and LZ_Uncompress for decompression.\n"
-					                                   "    It implies using the LZ algorithm. It uses "
-					     << (GAME_DATA__SERIALIZATION_SIZE + 65536) * sizeof(unsigned int) << " Bytes more,\n"
-					                                                                          "    but is WAY quicker. Also, \'tis the default one.\n\n"
-					                                                                          "\'"
-					     << compression_method::huffman << "\' means Huffman_Compress for compression and Huffman_Uncompress for decompression.\n"
-					                                       "    It implies using the Huffman algorithm.\n\n"
-					                                       "\'"
-					     << compression_method::rice8 << "\' means Rice_Compress for compression and Rice_Uncompress for decompression.\n"
-					                                     "    It implies using the Rice signed 8 bit algorithm.\n\n"
-					                                     "\'"
-					     << compression_method::riceu8 << "\' means Rice_Compress for compression and Rice_Uncompress for decompression.\n"
-					                                      "    It implies using the Rice unsigned 8 bit algorithm.\n\n"
-					                                      "\'"
-					     << compression_method::rle << "\' means RLE_Compress for compression and RLE_Uncompress for decompression.\n"
-					                                   "    It implies using the RLE algorithm.\n\n"
-					                                   "\'"
-					     << compression_method::sf << "\' means SF_Compress for compression and SF_Uncompress for decompression.\n"
-					                                  "    It implies using the Shannon-Fano algorithm.\n";
-				}
-				return 0;
-			}
-		}
-	}
-
-
-	unsigned int matrix_width = 7, matrix_height = 7, screen_width = 80, screen_height = 25;
-	bool put_apo_in_screens          = false;
-	compression_method saving_method = compression_method::flz;
-	ifstream configfile(configfilename);
-	if(!configfile)
-		ofstream(configfilename) << boolalpha << "Matrix height : " << matrix_height << "\n"
-		                                                                                "Matrix width : "
-		                         << matrix_width << "\n"
-		                                            "Screen height : "
-		                         << screen_height << "\n"
-		                                             "Screen width : "
-		                         << screen_width << "\n"
-		                                            "Put \'apo\' in screens : "
-		                         << put_apo_in_screens << "\n"
-		                                                  "Possible values: LZ \'"
-		                         << compression_method::lz << "\', Fast LZ \'" << compression_method::flz << "\', Huffman \'" << compression_method::huffman
-		                         << "\', Rice 8bit \'" << compression_method::rice8 << "\', Rice unsigned 8bit \'" << compression_method::riceu8 << "\', RLE \'"
-		                         << compression_method::rle << "\', SF \'" << compression_method::sf << "\'.\n"
-		                                                                                                "Saving method : "
-		                         << saving_method << '\n';
-	else {
-		unordered_map<string, string> values(6);
-		string line;
-		while(getline(configfile, line)) {
-			if(line.front() == '#' || line.find(" : ") == string::npos)
-				continue;
-			while(isspace(line.front()))
-				line = line.substr(1);
-			if(line.front() == '#' || line.find(" : ") == string::npos)
-				continue;
-			while(isspace(line.back()))
-				line.pop_back();
-			if(line.find(" : ") == string::npos)
-				continue;
-			const size_t pos = line.find(" : ");
-			values.emplace(line.substr(0, pos), line.substr(pos + 3));
-		}
-
-#define ERRORMESSAGE(nonwhat)                                                                                                                         \
-	{                                                                                                                                                   \
-		cerr << *argv << ": warning: non-" << nonwhat << " value in \"" << configfilename << "\" at key \"" << pr.first << "\" for value \"" << pr.second \
-		     << "\" reverting to previous/default\n";                                                                                                     \
-		was_error = true;                                                                                                                                 \
-	}
-#define READPROPERTY(idname, errormsg, charcondition, setwithcondition) \
-	if(pr.first == idname) {                                              \
-		bool bad = false;                                                   \
-		for(const char & ch : pr.second)                                    \
-			if(!charcondition(ch)) {                                          \
-				ERRORMESSAGE(errormsg)                                          \
-				bad = true;                                                     \
-				break;                                                          \
-			}                                                                 \
-		if(bad)                                                             \
-			continue;                                                         \
-		setwithcondition                                                    \
-	}
-#define READBOOLEANPROPERTY(idname, varname)                                                       \
-	if(pr.first == idname) {                                                                         \
-		switch(pr.second.size()) {                                                                     \
-			case 1:                                                                                      \
-				switch(pr.second[0]) {                                                                     \
-					case '0':                                                                                \
-						varname = false;                                                                       \
-						break;                                                                                 \
-					case '1':                                                                                \
-						varname = true;                                                                        \
-						break;                                                                                 \
-					default:                                                                                 \
-						ERRORMESSAGE("boolean")                                                                \
-				}                                                                                          \
-				break;                                                                                     \
-			case 2:                                                                                      \
-				if(pr.second == "no")                                                                      \
-					varname = false;                                                                         \
-				else                                                                                       \
-					ERRORMESSAGE("boolean")                                                                  \
-				break;                                                                                     \
-			case 3:                                                                                      \
-				if(pr.second == "yes")                                                                     \
-					varname = true;                                                                          \
-				else                                                                                       \
-					ERRORMESSAGE("boolean")                                                                  \
-				break;                                                                                     \
-			case 4:                                                                                      \
-				if(pr.second == "true")                                                                    \
-					varname = true;                                                                          \
-				else                                                                                       \
-					ERRORMESSAGE("boolean")                                                                  \
-				break;                                                                                     \
-			case 5:                                                                                      \
-				if(pr.second == "false")                                                                   \
-					varname = false;                                                                         \
-				else                                                                                       \
-					ERRORMESSAGE("boolean")                                                                  \
-				break;                                                                                     \
-			default:                                                                                     \
-				ERRORMESSAGE("lengthy-enough (1..5) (actual length: " + to_string(pr.second.size()) + ")") \
-		}                                                                                              \
-	}
-
-		bool was_error = false;
-		for(const auto & pr : values) {
-			READPROPERTY("Matrix height", "positive", isdigit, if(const int temp = atoi(pr.second.c_str())) matrix_height = temp; else ERRORMESSAGE("positive"))
-			else READPROPERTY(
-			    "Matrix width", "positive", isdigit, if(const int temp = atoi(pr.second.c_str())) matrix_width = temp; else ERRORMESSAGE(
-			        "positive")) else READPROPERTY("Screen height", "nonnegative", isdigit(ch) || ch == '-' + ch -,
-			                                       screen_height = atoi(
-			                                           pr.second
-			                                               .c_str());) else READPROPERTY("Screen width", "nonnegative", isdigit(ch) || ch == '-' + ch -,
-			                                                                             screen_width = atoi(
-			                                                                                 pr.second
-			                                                                                     .c_str());) else READBOOLEANPROPERTY("Put \'apo\' in screens",
-			                                                                                                                          put_apo_in_screens) if(pr.first ==
-			                                                                                                                                                 "Saving "
-			                                                                                                                                                 "metho"
-			                                                                                                                                                 "d") {
-				if(pr.second.size() != 1) {
-					ERRORMESSAGE("compression_method")
-					break;
-				}
-				const char ch = pr.second[0];
-				if(ch == compression_method::lz || ch == compression_method::flz || ch == compression_method::huffman || ch == compression_method::rice8 ||
-				   ch == compression_method::riceu8 || ch == compression_method::rle || ch == compression_method::sf)
-					saving_method = static_cast<compression_method>(pr.second[0]);
-				else {
-					ERRORMESSAGE("compression_method")
-					break;
-				}
-			}
-		}
-		if(was_error) {
-			cout << "\n(press enter to continue)";
-			cin.get();
-		}
-	}
-#undef READBOOLEANPROPERTY
-#undef READPROPERTY
-#undef ERRORMESSAGE
-	configfile.~ifstream();
-
+int main(int, const char * const * argv) {
+	const auto options = parse_options(argv);
+	if(!options.first)
+		return options.second;
+	const auto config = options.first.value();
 
 	initscr();
 	halfdelay(1);
@@ -314,15 +112,15 @@ int main(int, const char * argv[]) {
 		init_pair(COLOR_PAIR_WHITE, COLOR_BLACK, COLOR_WHITE);
 	}
 
-	WINDOW * main_screen = newwin(screen_height, screen_width, 0, 0);
+	WINDOW * main_screen = newwin(config.screen_height, config.screen_width, 0, 0);
 
 	scrollok(main_screen, true);
 	clearok(main_screen, true);
-	for(const string & str : {"Hi,", "I\'m Jedrzej", "From Krakow, Poland.", "Good Mythical Morning!"}) {
-		mvwaddstr(main_screen, screen_height / 2, (screen_width - str.size()) / 2, str.c_str());
+	for(const string & str : {"apoSimpleSmart"}) {
+		mvwaddstr(main_screen, config.screen_height / 2, (config.screen_width - str.size()) / 2, str.c_str());
 		wrefresh(main_screen);
 		bool broke = false;
-		for(unsigned int i = 0; i < screen_height / 2 + 1; ++i) {
+		for(unsigned int i = 0; i < config.screen_height / 2 + 1; ++i) {
 			if(getch() != ERR) {
 				broke = true;
 				break;
@@ -343,7 +141,7 @@ int main(int, const char * argv[]) {
 
 	bool shall_keep_going = true;
 	while(shall_keep_going)
-		switch(const int val = display_mainscreen(main_screen, put_apo_in_screens)) {
+		switch(const int val = display_mainscreen(main_screen, config.put_apo_in_screens)) {
 			case mainscreen_selection::start:
 				play_game(main_screen, global_data->highscore);
 				break;
@@ -357,7 +155,7 @@ int main(int, const char * argv[]) {
 				break;
 			case mainscreen_selection::credits:
 				wclear(main_screen);
-				display_creditsscreen(main_screen, put_apo_in_screens);
+				display_creditsscreen(main_screen, config.put_apo_in_screens);
 				wclear(main_screen);
 				break;
 			case mainscreen_selection::options: {
@@ -370,7 +168,7 @@ int main(int, const char * argv[]) {
 				while(name.size() < GAME_DATA__SERIALIZATION_SIZE)
 					name.push_back('\x41');
 				memcpy(global_data->name, name.c_str(), GAME_DATA__SERIALIZATION_SIZE);
-				save__game_data__to_file(global_data, saving_method);
+				save__game_data__to_file(global_data, config.saving_method);
 			} break;
 			case mainscreen_selection::highscore:
 				wclear(main_screen);
