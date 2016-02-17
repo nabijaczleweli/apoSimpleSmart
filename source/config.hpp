@@ -26,8 +26,6 @@
 #include <utility>
 #include <experimental/optional>
 
-#include "compression.hpp"
-
 
 struct ass_config {
 	unsigned int matrix_width  = 7;
@@ -36,7 +34,6 @@ struct ass_config {
 	unsigned int screen_height = 25;
 
 	bool put_apo_in_screens          = false;
-	compression_method saving_method = compression_method::flz;
 };
 
 

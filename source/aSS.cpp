@@ -32,7 +32,6 @@
 #include "config.hpp"
 #include "game_data.hpp"
 #include "exceptions.hpp"
-#include "compression.hpp"
 
 
 using namespace std;

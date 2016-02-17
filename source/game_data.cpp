@@ -22,12 +22,40 @@
 
 #include "game_data.hpp"
 
-#include <cstring>
+#include <fstream>
+
+#include "cereal/cereal.hpp"
+#include "cereal/types/vector.hpp"
+#include "cereal/archives/json.hpp"
 
 
-game_data::game_data() {
-	char * const dis = static_cast<char *>(static_cast<void *>(this));
-	memset(dis, GAME_DATA__SERIALIZATION_SIZE, '\x41');
-	length_of_name       = 0;
-	amount_of_highscores = 0;
+using namespace std;
+
+
+template <class Archive>
+void serialize(Archive & archive, high_data & hd) {
+	archive(hd.name, hd.score, hd.level);
+}
+
+template <class Archive>
+void serialize(Archive & archive, game_data & gd) {
+	archive(gd.name, gd.highscore);
+}
+
+
+game_data load__game_data__from_file(const std::string & filename) {
+	game_data res;
+
+	ifstream ifs(filename);
+	cereal::JSONInputArchive archive(ifs);
+	archive(res);
+
+	return res;
+}
+
+void save__game_data__to_file(const game_data & input_gd, const std::string & filename) {
+	vector<string> asdf;
+	ofstream ofs(filename);
+	cereal::JSONOutputArchive archive(ofs);
+	archive(input_gd);
 }

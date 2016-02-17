@@ -61,38 +61,11 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 					cout << "Usage: " << *argv << " [options]\n"
 					                              "Options:\n"
 					                              "  --help                    Display this information\n"
-					                              "  --help-compression-format Display information about allowed compression mechanisms\n"
 					                              "  --configfile=<file>       Use config file file; Default: simple_smart.cfg\n"
 					                              "  -c <file>                 Use config file file; Default: simple_smart.cfg\n"
 					                              "\n"
 					                              "For bug reporting instructions, please see:\n"
-					                              "<https://github.com/nabijaczleweli>.\n";
-				} else if(arglen == 25 && !memcmp(arg + 6, "-compression-format", 19)) {
-					cout << "Compression format list.\n"
-					        "\n"
-					        "\'"
-					     << compression_method::lz << "\' means LZ_Compress for compression and LZ_Uncompress for decompression.\n"
-					                                  "    It implies using the LZ algorithm.\n\n"
-					                                  "\'"
-					     << compression_method::flz << "\' means LZ_CompressFast for compression and LZ_Uncompress for decompression.\n"
-					                                   "    It implies using the LZ algorithm. It uses "
-					     << (GAME_DATA__SERIALIZATION_SIZE + 65536) * sizeof(unsigned int) << " Bytes more,\n"
-					                                                                          "    but is WAY quicker. Also, \'tis the default one.\n\n"
-					                                                                          "\'"
-					     << compression_method::huffman << "\' means Huffman_Compress for compression and Huffman_Uncompress for decompression.\n"
-					                                       "    It implies using the Huffman algorithm.\n\n"
-					                                       "\'"
-					     << compression_method::rice8 << "\' means Rice_Compress for compression and Rice_Uncompress for decompression.\n"
-					                                     "    It implies using the Rice signed 8 bit algorithm.\n\n"
-					                                     "\'"
-					     << compression_method::riceu8 << "\' means Rice_Compress for compression and Rice_Uncompress for decompression.\n"
-					                                      "    It implies using the Rice unsigned 8 bit algorithm.\n\n"
-					                                      "\'"
-					     << compression_method::rle << "\' means RLE_Compress for compression and RLE_Uncompress for decompression.\n"
-					                                   "    It implies using the RLE algorithm.\n\n"
-					                                   "\'"
-					     << compression_method::sf << "\' means SF_Compress for compression and SF_Uncompress for decompression.\n"
-					                                  "    It implies using the Shannon-Fano algorithm.\n";
+					                              "<https://github.com/nabijaczleweli/apoSimpleSmart>.\n";
 				}
 				return {nullopt, 0};
 			}
@@ -102,7 +75,6 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 
 	unsigned int matrix_width = 7, matrix_height = 7, screen_width = 80, screen_height = 25;
 	bool put_apo_in_screens          = false;
-	compression_method saving_method = compression_method::flz;
 	ifstream configfile(configfilename);
 	if(!configfile)
 		ofstream(configfilename) << boolalpha << "Matrix height : " << matrix_height << "\n"
@@ -113,13 +85,7 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 		                                             "Screen width : "
 		                         << screen_width << "\n"
 		                                            "Put \'apo\' in screens : "
-		                         << put_apo_in_screens << "\n"
-		                                                  "Possible values: LZ \'"
-		                         << compression_method::lz << "\', Fast LZ \'" << compression_method::flz << "\', Huffman \'" << compression_method::huffman
-		                         << "\', Rice 8bit \'" << compression_method::rice8 << "\', Rice unsigned 8bit \'" << compression_method::riceu8 << "\', RLE \'"
-		                         << compression_method::rle << "\', SF \'" << compression_method::sf << "\'.\n"
-		                                                                                                "Saving method : "
-		                         << saving_method << '\n';
+		                         << put_apo_in_screens << "\n";
 	else {
 		unordered_map<string, string> values(6);
 		string line;
@@ -213,23 +179,7 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 			                                                                             screen_width = atoi(
 			                                                                                 pr.second
 			                                                                                     .c_str());) else READBOOLEANPROPERTY("Put \'apo\' in screens",
-			                                                                                                                          put_apo_in_screens) if(pr.first ==
-			                                                                                                                                                 "Saving "
-			                                                                                                                                                 "metho"
-			                                                                                                                                                 "d") {
-				if(pr.second.size() != 1) {
-					ERRORMESSAGE("compression_method")
-					break;
-				}
-				const char ch = pr.second[0];
-				if(ch == compression_method::lz || ch == compression_method::flz || ch == compression_method::huffman || ch == compression_method::rice8 ||
-				   ch == compression_method::riceu8 || ch == compression_method::rle || ch == compression_method::sf)
-					saving_method = static_cast<compression_method>(pr.second[0]);
-				else {
-					ERRORMESSAGE("compression_method")
-					break;
-				}
-			}
+			                                                                                                                          put_apo_in_screens)
 		}
 		if(was_error) {
 			cout << "\n(press enter to continue)";
@@ -240,12 +190,5 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 #undef READPROPERTY
 #undef ERRORMESSAGE
 
-	return {make_optional(ass_config{
-		matrix_width,
-		matrix_height,
-		screen_width,
-		screen_height,
-		put_apo_in_screens,
-		saving_method
-	}), 0};
+	return {make_optional(ass_config{matrix_width, matrix_height, screen_width, screen_height, put_apo_in_screens}), 0};
 }

@@ -23,29 +23,22 @@
 #pragma once
 
 
+#include <vector>
+#include <string>
 #include <cstdint>
 
 
-#define GAME_DATA__NAME_MAX 33
-#define GAME_DATA__HIGHSCORE_MAX_AMOUNT 10
-
-#define HIGH_DATA__SERIALIZATION_SIZE (sizeof(uint8_t) + GAME_DATA__NAME_MAX + sizeof(uint32_t) + sizeof(uint16_t))
-#define GAME_DATA__SERIALIZATION_SIZE \
-	(sizeof(uint8_t) + GAME_DATA__NAME_MAX + sizeof(uint8_t) + GAME_DATA__HIGHSCORE_MAX_AMOUNT * HIGH_DATA__SERIALIZATION_SIZE)
-
-
 struct high_data {
-	uint8_t length_of_name;
-	char name[GAME_DATA__NAME_MAX];
+	std::string name;
 	uint32_t score;
 	uint16_t level;
 };
 
 struct game_data {
-	uint8_t length_of_name;
-	char name[GAME_DATA__NAME_MAX];
-	uint8_t amount_of_highscores;
-	high_data highscore[GAME_DATA__HIGHSCORE_MAX_AMOUNT];
-
-	game_data();
+	std::string name;
+	std::vector<high_data> highscore;
 };
+
+
+game_data load__game_data__from_file(const std::string & filename = "gd.dat");
+void save__game_data__to_file(const game_data & input_gd, const std::string & filename = "gd.dat");
