@@ -25,6 +25,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <limits>
 
 #include <tui.h>
 #include <armadillo>
@@ -49,7 +50,6 @@ using namespace arma;
 #define COLOR_PAIR_GREEN 3
 #define COLOR_PAIR_WHITE 4
 
-#define NAME_MAX 40
 
 enum mainscreen_selection : char { start, tutorial, quit, credits, options, highscore };
 
@@ -386,7 +386,7 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 	getmaxyx(parent_window, maxY, maxX);
 	window_p menu_button_window(derwin(parent_window, 3, 6, maxY - 3, maxX - 6));
 	window_p bigstring_message_window(derwin(parent_window, 7, 21, (maxY - 7) / 2, (maxX - 21) / 2));
-	window_p name_editbox_window(derwin(parent_window, 3, NAME_MAX + 2, 0, (maxX - (NAME_MAX + 2)) / 2));
+	window_p name_editbox_window(derwin(parent_window, 3, game_data::max_name_length + 2, 0, (maxX - (game_data::max_name_length + 2)) / 2));
 	touchwin(parent_window);
 	wrefresh(parent_window);
 
@@ -474,7 +474,7 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 					wprintw(name_editbox_window.get(), "%c %c", BACKSPACE, BACKSPACE);
 					wrefresh(name_editbox_window.get());
 				}
-			} else if(static_cast<int>(newname.size()) < NAME_MAX) {
+			} else if(newname.size() < game_data::max_name_length) {
 				newname.push_back(c);
 				waddch(name_editbox_window.get(), c);
 				wrefresh(name_editbox_window.get());
@@ -556,8 +556,9 @@ void display_tutorialscreen(WINDOW * parent_window) {
 }
 
 void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & highscores) {
-	static const auto maximal_score_width = to_string(numeric_limits<uint32_t>::max() / 4).size();
-	static const auto maximal_whole_width = NAME_MAX + 1 + maximal_score_width + 1 + to_string(numeric_limits<uint16_t>::max() / 4).size();
+	static const auto maximal_score_width = to_string(numeric_limits<decltype(highscores[0].score)>::max() / 4).size();
+	static const auto maximal_whole_width =
+	    game_data::max_name_length + 1 + maximal_score_width + 1 + to_string(numeric_limits<decltype(highscores[0].level)>::max() / 4).size();
 
 	int maxX, maxY;
 	getmaxyx(parent_window, maxY, maxX);
@@ -575,7 +576,7 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 	mvwchgat(menu_button_window.get(), 1, 1, 1, A_BOLD, 0, nullptr);
 	wrefresh(description_message_window.get());
 	mvwaddstr(description_message_window.get(), 0, 0, "Name");
-	for(auto i = 4; i < NAME_MAX; ++i)
+	for(auto i = 4u; i < game_data::max_name_length; ++i)
 		waddch(description_message_window.get(), ' ');
 	waddstr(description_message_window.get(), "|Score");
 	for(auto i = 5u; i < maximal_score_width; ++i)
@@ -586,7 +587,7 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 	for(auto i = 0u; i < highscores.size(); ++i) {
 		wmove(highscores_messages_window[i].get(), 0, 0);
 		wprintw(highscores_messages_window[i].get(), "%.*s", highscores[i].name.size(), highscores[i].name.c_str());
-		for(auto j = highscores[i].name.size(); j < NAME_MAX; ++j)
+		for(auto j = highscores[i].name.size(); j < game_data::max_name_length; ++j)
 			waddch(highscores_messages_window[i].get(), ' ');
 		wprintw(highscores_messages_window[i].get(), "|%u", highscores[i].score);
 		for(auto j = to_string(highscores[i].score).size(); j < maximal_score_width; ++j)

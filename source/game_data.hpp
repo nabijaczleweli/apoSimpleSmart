@@ -35,6 +35,9 @@ struct high_data {
 };
 
 struct game_data {
+	static const constexpr std::size_t max_name_length = 40;
+
+
 	std::string name;
 	std::vector<high_data> highscore;
 };
