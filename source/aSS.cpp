@@ -29,6 +29,7 @@
 #include <tui.h>
 #include <armadillo>
 
+#include "curses.hpp"
 #include "config.hpp"
 #include "game_data.hpp"
 #include "exceptions.hpp"
@@ -92,7 +93,7 @@ int main(int, const char * const * argv) {
 		mvwaddstr(main_screen, config.screen_height / 2, (config.screen_width - str.size()) / 2, str.c_str());
 		wrefresh(main_screen);
 		bool broke = false;
-		for(unsigned int i = 0; i < config.screen_height / 2 + 1; ++i) {
+		for(auto i = 0u; i < config.screen_height / 2 + 1; ++i) {
 			if(getch() != ERR) {
 				broke = true;
 				break;
@@ -160,62 +161,63 @@ int main(int, const char * const * argv) {
 mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_apo_in) {
 	int maxX, maxY;
 	getmaxyx(parent_window, maxY, maxX);
-	WINDOW * start_button_window = derwin(parent_window, 3, 7, 0, (maxX - 7) / 2);
+	window_p start_button_window(derwin(parent_window, 3, 7, 0, (maxX - 7) / 2));
 	int tempX, tempY;
-	getparyx(start_button_window, tempY, tempX);
-	WINDOW *tutorial_button_window = derwin(parent_window, 3, 10, tempY + 3, (maxX - 10) / 2),
-	       *quit_button_window = derwin(parent_window, 3, 6, maxY - 3, maxX - 6), *credits_button_window = derwin(parent_window, 3, 9, maxY - 3, 0),
-	       *options_button_window = derwin(parent_window, 3, 9, maxY - 3, (maxX - 9) / 2);
-	getparyx(options_button_window, tempY, tempX);
-	WINDOW *highscore_button_window = derwin(parent_window, 3, 10, tempY - 3, (maxX - 11) / 2),
-	       *bigstring_message_window = derwin(parent_window, 8, 51, (maxY - 8) / 2, (maxX - 51) / 2);
+	getparyx(start_button_window.get(), tempY, tempX);
+	window_p tutorial_button_window(derwin(parent_window, 3, 10, tempY + 3, (maxX - 10) / 2));
+	window_p quit_button_window(derwin(parent_window, 3, 6, maxY - 3, maxX - 6));
+	window_p credits_button_window(derwin(parent_window, 3, 9, maxY - 3, 0));
+	window_p options_button_window(derwin(parent_window, 3, 9, maxY - 3, (maxX - 9) / 2));
+	getparyx(options_button_window.get(), tempY, tempX);
+	window_p highscore_button_window(derwin(parent_window, 3, 10, tempY - 3, (maxX - 11) / 2));
+	window_p bigstring_message_window(derwin(parent_window, 8, 51, (maxY - 8) / 2, (maxX - 51) / 2));
 	touchwin(parent_window);
 	wrefresh(parent_window);
 
 #define FOR_ALL_WINDOWS(func)   \
-	func(start_button_window);    \
-	func(tutorial_button_window); \
-	func(quit_button_window);     \
-	func(credits_button_window);  \
-	func(options_button_window);  \
-	func(highscore_button_window);
+	func(start_button_window.get());    \
+	func(tutorial_button_window.get()); \
+	func(quit_button_window.get());     \
+	func(credits_button_window.get());  \
+	func(options_button_window.get());  \
+	func(highscore_button_window.get());
 #define FOR_ALL_WINDOWS_ARG(func, ...)       \
-	func(start_button_window, __VA_ARGS__);    \
-	func(tutorial_button_window, __VA_ARGS__); \
-	func(quit_button_window, __VA_ARGS__);     \
-	func(credits_button_window, __VA_ARGS__);  \
-	func(options_button_window, __VA_ARGS__);  \
-	func(highscore_button_window, __VA_ARGS__);
+	func(start_button_window.get(), __VA_ARGS__);    \
+	func(tutorial_button_window.get(), __VA_ARGS__); \
+	func(quit_button_window.get(), __VA_ARGS__);     \
+	func(credits_button_window.get(), __VA_ARGS__);  \
+	func(options_button_window.get(), __VA_ARGS__);  \
+	func(highscore_button_window.get(), __VA_ARGS__);
 
 	FOR_ALL_WINDOWS_ARG(wborder, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER)
-	mvwaddstr(start_button_window, 1, 1, "Start");
-	mvwaddstr(tutorial_button_window, 1, 1, "Tutorial");
-	mvwaddstr(quit_button_window, 1, 1, "Quit");
-	mvwaddstr(credits_button_window, 1, 1, "Credits");
-	mvwaddstr(options_button_window, 1, 1, "Options");
-	mvwaddstr(highscore_button_window, 1, 1, "Higscore");
+	mvwaddstr(start_button_window.get(), 1, 1, "Start");
+	mvwaddstr(tutorial_button_window.get(), 1, 1, "Tutorial");
+	mvwaddstr(quit_button_window.get(), 1, 1, "Quit");
+	mvwaddstr(credits_button_window.get(), 1, 1, "Credits");
+	mvwaddstr(options_button_window.get(), 1, 1, "Options");
+	mvwaddstr(highscore_button_window.get(), 1, 1, "Higscore");
 	FOR_ALL_WINDOWS_ARG(mvwchgat, 1, 1, 1, A_BOLD, 0, nullptr);
 	FOR_ALL_WINDOWS(wrefresh);
 
 	if(put_apo_in) {
-		mvwaddstr(bigstring_message_window, 0, 0, R"(  __    __        __     __   ___________          )");
-		mvwaddstr(bigstring_message_window, 1, 0, R"(//  \\//  \\/  \//  \\ //  \\|__   _____ \    _    )");
-		mvwaddstr(bigstring_message_window, 2, 0, R"(||    ||  |||  |||  || ||  ||   \ /     \| __| |__ )");
-		mvwaddstr(bigstring_message_window, 3, 0, R"(\\__  \\__//\_ |\\__// \\__//   | |       |__   __|)");
-		mvwaddstr(bigstring_message_window, 4, 0, R"(    \\  //\\   |/\\  //@@\\/    | |          | |   )");
-		mvwaddstr(bigstring_message_window, 5, 0, R"(    || //  \\ /|  \\ ||  |||    | |          | |   )");
-		mvwaddstr(bigstring_message_window, 6, 0, R"(\\__////    \|/    \\\\__//\_   |_|          \_\   )");
-		mvwaddstr(bigstring_message_window, 4, 23, "\304\304");
+		mvwaddstr(bigstring_message_window.get(), 0, 0, R"(  __    __        __     __   ___________          )");
+		mvwaddstr(bigstring_message_window.get(), 1, 0, R"(//  \\//  \\/  \//  \\ //  \\|__   _____ \    _    )");
+		mvwaddstr(bigstring_message_window.get(), 2, 0, R"(||    ||  |||  |||  || ||  ||   \ /     \| __| |__ )");
+		mvwaddstr(bigstring_message_window.get(), 3, 0, R"(\\__  \\__//\_ |\\__// \\__//   | |       |__   __|)");
+		mvwaddstr(bigstring_message_window.get(), 4, 0, R"(    \\  //\\   |/\\  //@@\\/    | |          | |   )");
+		mvwaddstr(bigstring_message_window.get(), 5, 0, R"(    || //  \\ /|  \\ ||  |||    | |          | |   )");
+		mvwaddstr(bigstring_message_window.get(), 6, 0, R"(\\__////    \|/    \\\\__//\_   |_|          \_\   )");
+		mvwaddstr(bigstring_message_window.get(), 4, 23, "\304\304");
 	} else {
-		mvwaddstr(bigstring_message_window, 0, 0, R"(  __                          ___________          )");
-		mvwaddstr(bigstring_message_window, 1, 0, R"(//  \\                       |__   _____ \    _    )");
-		mvwaddstr(bigstring_message_window, 2, 0, R"(||                              \ /     \| __| |__ )");
-		mvwaddstr(bigstring_message_window, 3, 0, R"(\\__                   __       | |       |__   __|)");
-		mvwaddstr(bigstring_message_window, 4, 0, R"(    \\  //\\   //\\  //  \\/    | |          | |   )");
-		mvwaddstr(bigstring_message_window, 5, 0, R"(    || //  \\ //  \\ ||  |||    | |          | |   )");
-		mvwaddstr(bigstring_message_window, 6, 0, R"(\\__////    \|/    \\\\__//\_   |_|          \_\   )");
+		mvwaddstr(bigstring_message_window.get(), 0, 0, R"(  __                          ___________          )");
+		mvwaddstr(bigstring_message_window.get(), 1, 0, R"(//  \\                       |__   _____ \    _    )");
+		mvwaddstr(bigstring_message_window.get(), 2, 0, R"(||                              \ /     \| __| |__ )");
+		mvwaddstr(bigstring_message_window.get(), 3, 0, R"(\\__                   __       | |       |__   __|)");
+		mvwaddstr(bigstring_message_window.get(), 4, 0, R"(    \\  //\\   //\\  //  \\/    | |          | |   )");
+		mvwaddstr(bigstring_message_window.get(), 5, 0, R"(    || //  \\ //  \\ ||  |||    | |          | |   )");
+		mvwaddstr(bigstring_message_window.get(), 6, 0, R"(\\__////    \|/    \\\\__//\_   |_|          \_\   )");
 	}
-	wrefresh(bigstring_message_window);
+	wrefresh(bigstring_message_window.get());
 
 
 	halfdelay(1);
@@ -257,32 +259,32 @@ mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_a
 				wrefresh(parent_window);            //  DEBUG
 				int *mouseX = new int, *mouseY = new int;
 
-				wmouse_position(start_button_window, mouseX, mouseY);
+				wmouse_position(start_button_window.get(), mouseX, mouseY);
 				if(*mouseX != -1 && *mouseY != -1) {
 					toret = mainscreen_selection::start;
 					mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
 				} else {
-					wmouse_position(tutorial_button_window, mouseX, mouseY);
+					wmouse_position(tutorial_button_window.get(), mouseX, mouseY);
 					if(*mouseX != -1 && *mouseY != -1) {
 						toret = mainscreen_selection::tutorial;
 						mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
 					} else {
-						wmouse_position(quit_button_window, mouseX, mouseY);
+						wmouse_position(quit_button_window.get(), mouseX, mouseY);
 						if(*mouseX != -1 && *mouseY != -1) {
 							toret = mainscreen_selection::quit;
 							mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
 						} else {
-							wmouse_position(credits_button_window, mouseX, mouseY);
+							wmouse_position(credits_button_window.get(), mouseX, mouseY);
 							if(*mouseX != -1 && *mouseY != -1) {
 								toret = mainscreen_selection::credits;
 								mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
 							} else {
-								wmouse_position(options_button_window, mouseX, mouseY);
+								wmouse_position(options_button_window.get(), mouseX, mouseY);
 								if(*mouseX != -1 && *mouseY != -1) {
 									toret = mainscreen_selection::options;
 									mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
 								} else {
-									wmouse_position(highscore_button_window, mouseX, mouseY);
+									wmouse_position(highscore_button_window.get(), mouseX, mouseY);
 									if(*mouseX != -1 && *mouseY != -1) {
 										toret = mainscreen_selection::highscore;
 										mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
@@ -303,17 +305,6 @@ mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_a
 	}
 	FOR_ALL_WINDOWS_ARG(nodelay, true);
 	mousemask(0, nullptr);
-
-
-	FOR_ALL_WINDOWS(delwin);
-	delwin(bigstring_message_window);
-	start_button_window      = nullptr;
-	tutorial_button_window   = nullptr;
-	quit_button_window       = nullptr;
-	credits_button_window    = nullptr;
-	options_button_window    = nullptr;
-	highscore_button_window  = nullptr;
-	bigstring_message_window = nullptr;
 
 #undef FOR_ALL_WINDOWS
 #undef FOR_ALL_WINDOWS_ARG
@@ -614,8 +605,8 @@ void display_tutorialscreen(WINDOW * parent_window) {
 }
 
 void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & highscores) {
-	static const unsigned int maximal_score_width = to_string(numeric_limits<uint32_t>::max() / 4).size();
-	static const unsigned int maximal_whole_width = NAME_MAX + 1 + maximal_score_width + 1 + to_string(numeric_limits<uint16_t>::max() / 4).size();
+	static const auto maximal_score_width = to_string(numeric_limits<uint32_t>::max() / 4).size();
+	static const auto maximal_whole_width = NAME_MAX + 1 + maximal_score_width + 1 + to_string(numeric_limits<uint16_t>::max() / 4).size();
 
 	int maxX, maxY;
 	getmaxyx(parent_window, maxY, maxX);
@@ -623,7 +614,7 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 	       *description_message_window = derwin(parent_window, 2, maximal_whole_width, 0, (maxX - maximal_whole_width) / 2),
 	       **highscores_messages_window = new WINDOW *[highscores.size()],
 	       *none_message_window = highscores.size() ? nullptr : derwin(parent_window, 2, 23, maxY - 2, (maxX - 23) / 2);
-	for(uint8_t i = 0; i < highscores.size(); ++i)
+	for(auto i = 0u; i < highscores.size(); ++i)
 		highscores_messages_window[i] = derwin(parent_window, 1, maximal_whole_width, i + 1, (maxX - maximal_whole_width) / 2), touchwin(parent_window);
 	wrefresh(parent_window);
 
@@ -632,21 +623,21 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 	mvwchgat(menu_button_window, 1, 1, 1, A_BOLD, 0, nullptr);
 	wrefresh(description_message_window);
 	mvwaddstr(description_message_window, 0, 0, "Name");
-	for(unsigned int i = 4; i < NAME_MAX; ++i)
+	for(auto i = 4; i < NAME_MAX; ++i)
 		waddch(description_message_window, ' ');
 	waddstr(description_message_window, "|Score");
-	for(unsigned int i = 5; i < maximal_score_width; ++i)
+	for(auto i = 5u; i < maximal_score_width; ++i)
 		waddch(description_message_window, ' ');
 	waddstr(description_message_window, "|Level");
 	wrefresh(description_message_window);
 
-	for(uint8_t i = 0; i < highscores.size(); ++i) {
+	for(auto i = 0u; i < highscores.size(); ++i) {
 		wmove(highscores_messages_window[i], 0, 0);
 		wprintw(highscores_messages_window[i], "%.*s", highscores[i].name.size(), highscores[i].name.c_str());
-		for(unsigned int j = highscores[i].name.size(); j < NAME_MAX; ++j)
+		for(auto j = highscores[i].name.size(); j < NAME_MAX; ++j)
 			waddch(highscores_messages_window[i], ' ');
 		wprintw(highscores_messages_window[i], "|%u", highscores[i].score);
-		for(unsigned int j = to_string(highscores[i].score).size(); j < maximal_score_width; ++j)
+		for(auto j = to_string(highscores[i].score).size(); j < maximal_score_width; ++j)
 			waddch(highscores_messages_window[i], ' ');
 		wprintw(highscores_messages_window[i], "|%hu", highscores[i].level);
 		wrefresh(highscores_messages_window[i]);
@@ -688,13 +679,13 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 	nodelay(description_message_window, true);
 	if(!highscores.size())
 		nodelay(none_message_window, true);
-	for(uint8_t i = 0; i < highscores.size(); ++i)
+	for(auto i = 0u; i < highscores.size(); ++i)
 		nodelay(highscores_messages_window[i], true);
 	mousemask(0, nullptr);
 
 	delwin(menu_button_window);
 	delwin(description_message_window);
-	for(uint8_t i = 0; i < highscores.size(); ++i) {
+	for(auto i = 0u; i < highscores.size(); ++i) {
 		delwin(highscores_messages_window[i]);
 		highscores_messages_window[i] = nullptr;
 	}
