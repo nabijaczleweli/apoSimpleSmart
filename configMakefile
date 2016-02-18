@@ -26,4 +26,4 @@ AR := ar
 
 CXXAR := -O3 -std=c++14 -Wall -Wextra
 CCAR := -O3 -std=c11 -Wall -Wextra
-LDAR := -Lout/dependencies -lbcl -lpdcurses -larmadillo
+LDAR := -Lout/dependencies -lpdcurses -larmadillo

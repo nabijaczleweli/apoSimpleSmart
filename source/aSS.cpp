@@ -47,14 +47,16 @@ using namespace arma;
 #define COLOR_PAIR_GREEN 3
 #define COLOR_PAIR_WHITE 4
 
+#define NAME_MAX 40
+
 enum mainscreen_selection : char { start, tutorial, quit, credits, options, highscore };
 
 mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_apo_in);
 void display_creditsscreen(WINDOW * parent_window, const bool put_apo_in);
 string display_optionsscreen(WINDOW * parent_window, const string & name);
 void display_tutorialscreen(WINDOW * parent_window);
-void display_highscorescreen(WINDOW * parent_window, uint8_t amount_of_highscores, const high_data * const highscores);
-void play_game(WINDOW * parent_window, high_data * const highscores);
+void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & highscores);
+void play_game(WINDOW * parent_window, vector<high_data> & highscores);
 
 
 constexpr static const chtype right_pointing_moving_thing = ')';
@@ -106,14 +108,13 @@ int main(int, const char * const * argv) {
 	}
 
 	nocbreak();
-	game_data * global_data = new game_data;
-	load__game_data__from_file(global_data);
+	game_data global_data = load_game_data_from_file();
 
 	bool shall_keep_going = true;
 	while(shall_keep_going)
 		switch(const int val = display_mainscreen(main_screen, config.put_apo_in_screens)) {
 			case mainscreen_selection::start:
-				play_game(main_screen, global_data->highscore);
+				play_game(main_screen, global_data.highscore);
 				break;
 			case mainscreen_selection::tutorial:
 				wclear(main_screen);
@@ -128,21 +129,17 @@ int main(int, const char * const * argv) {
 				display_creditsscreen(main_screen, config.put_apo_in_screens);
 				wclear(main_screen);
 				break;
-			case mainscreen_selection::options: {
+			case mainscreen_selection::options:
 				wclear(main_screen);
-				string name = display_optionsscreen(main_screen, string(global_data->name, global_data->length_of_name));
+				global_data.name = display_optionsscreen(main_screen, global_data.name);
 				curs_set(0);
 				wclear(main_screen);
 
-				global_data->length_of_name = name.size();
-				while(name.size() < GAME_DATA__SERIALIZATION_SIZE)
-					name.push_back('\x41');
-				memcpy(global_data->name, name.c_str(), GAME_DATA__SERIALIZATION_SIZE);
-				save__game_data__to_file(global_data, config.saving_method);
-			} break;
+				save_game_data_to_file(global_data);
+				break;
 			case mainscreen_selection::highscore:
 				wclear(main_screen);
-				display_highscorescreen(main_screen, global_data->amount_of_highscores, global_data->highscore);
+				display_highscorescreen(main_screen, global_data.highscore);
 				wclear(main_screen);
 				break;
 			default:
@@ -155,9 +152,7 @@ int main(int, const char * const * argv) {
 
 
 	delwin(main_screen);
-	delete global_data;
 	main_screen = nullptr;
-	global_data = nullptr;
 	endwin();
 }
 
@@ -423,7 +418,7 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 	getmaxyx(parent_window, maxY, maxX);
 	WINDOW *menu_button_window       = derwin(parent_window, 3, 6, maxY - 3, maxX - 6),
 	       *bigstring_message_window = derwin(parent_window, 7, 21, (maxY - 7) / 2, (maxX - 21) / 2),
-	       *name_editbox_window = derwin(parent_window, 3, GAME_DATA__NAME_MAX + 2, 0, (maxX - (GAME_DATA__NAME_MAX + 2)) / 2);
+	       *name_editbox_window = derwin(parent_window, 3, NAME_MAX + 2, 0, (maxX - (NAME_MAX + 2)) / 2);
 	touchwin(parent_window);
 	wrefresh(parent_window);
 
@@ -516,7 +511,7 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 					wprintw(name_editbox_window, "%c %c", BACKSPACE, BACKSPACE);
 					wrefresh(name_editbox_window);
 				}
-			} else if(static_cast<int>(newname.size()) < GAME_DATA__NAME_MAX) {
+			} else if(static_cast<int>(newname.size()) < NAME_MAX) {
 				newname.push_back(c);
 				waddch(name_editbox_window, c);
 				wrefresh(name_editbox_window);
@@ -618,17 +613,17 @@ void display_tutorialscreen(WINDOW * parent_window) {
 	clearing_message_window  = nullptr;
 }
 
-void display_highscorescreen(WINDOW * parent_window, uint8_t amount_of_highscores, const high_data * const highscores) {
+void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & highscores) {
 	static const unsigned int maximal_score_width = to_string(numeric_limits<uint32_t>::max() / 4).size();
-	static const unsigned int maximal_whole_width = GAME_DATA__NAME_MAX + 1 + maximal_score_width + 1 + to_string(numeric_limits<uint16_t>::max() / 4).size();
+	static const unsigned int maximal_whole_width = NAME_MAX + 1 + maximal_score_width + 1 + to_string(numeric_limits<uint16_t>::max() / 4).size();
 
 	int maxX, maxY;
 	getmaxyx(parent_window, maxY, maxX);
 	WINDOW *menu_button_window         = derwin(parent_window, 3, 6, maxY - 3, maxX - 6),
 	       *description_message_window = derwin(parent_window, 2, maximal_whole_width, 0, (maxX - maximal_whole_width) / 2),
-	       **highscores_messages_window = new WINDOW *[amount_of_highscores],
-	       *none_message_window = amount_of_highscores ? nullptr : derwin(parent_window, 2, 23, maxY - 2, (maxX - 23) / 2);
-	for(uint8_t i = 0; i < amount_of_highscores; ++i)
+	       **highscores_messages_window = new WINDOW *[highscores.size()],
+	       *none_message_window = highscores.size() ? nullptr : derwin(parent_window, 2, 23, maxY - 2, (maxX - 23) / 2);
+	for(uint8_t i = 0; i < highscores.size(); ++i)
 		highscores_messages_window[i] = derwin(parent_window, 1, maximal_whole_width, i + 1, (maxX - maximal_whole_width) / 2), touchwin(parent_window);
 	wrefresh(parent_window);
 
@@ -637,7 +632,7 @@ void display_highscorescreen(WINDOW * parent_window, uint8_t amount_of_highscore
 	mvwchgat(menu_button_window, 1, 1, 1, A_BOLD, 0, nullptr);
 	wrefresh(description_message_window);
 	mvwaddstr(description_message_window, 0, 0, "Name");
-	for(unsigned int i = 4; i < GAME_DATA__NAME_MAX; ++i)
+	for(unsigned int i = 4; i < NAME_MAX; ++i)
 		waddch(description_message_window, ' ');
 	waddstr(description_message_window, "|Score");
 	for(unsigned int i = 5; i < maximal_score_width; ++i)
@@ -645,10 +640,10 @@ void display_highscorescreen(WINDOW * parent_window, uint8_t amount_of_highscore
 	waddstr(description_message_window, "|Level");
 	wrefresh(description_message_window);
 
-	for(uint8_t i = 0; i < amount_of_highscores; ++i) {
+	for(uint8_t i = 0; i < highscores.size(); ++i) {
 		wmove(highscores_messages_window[i], 0, 0);
-		wprintw(highscores_messages_window[i], "%.*s", static_cast<int>(highscores[i].length_of_name), highscores[i].name);
-		for(unsigned int j = highscores[i].length_of_name; j < GAME_DATA__NAME_MAX; ++j)
+		wprintw(highscores_messages_window[i], "%.*s", highscores[i].name.size(), highscores[i].name.c_str());
+		for(unsigned int j = highscores[i].name.size(); j < NAME_MAX; ++j)
 			waddch(highscores_messages_window[i], ' ');
 		wprintw(highscores_messages_window[i], "|%u", highscores[i].score);
 		for(unsigned int j = to_string(highscores[i].score).size(); j < maximal_score_width; ++j)
@@ -656,7 +651,7 @@ void display_highscorescreen(WINDOW * parent_window, uint8_t amount_of_highscore
 		wprintw(highscores_messages_window[i], "|%hu", highscores[i].level);
 		wrefresh(highscores_messages_window[i]);
 	}
-	if(!amount_of_highscores) {
+	if(!highscores.size()) {
 		mvwaddstr(none_message_window, 0, 0, "None yet! Go make some!");
 		wrefresh(none_message_window);
 	}
@@ -691,20 +686,20 @@ void display_highscorescreen(WINDOW * parent_window, uint8_t amount_of_highscore
 		}
 	nodelay(menu_button_window, true);
 	nodelay(description_message_window, true);
-	if(!amount_of_highscores)
+	if(!highscores.size())
 		nodelay(none_message_window, true);
-	for(uint8_t i = 0; i < amount_of_highscores; ++i)
+	for(uint8_t i = 0; i < highscores.size(); ++i)
 		nodelay(highscores_messages_window[i], true);
 	mousemask(0, nullptr);
 
 	delwin(menu_button_window);
 	delwin(description_message_window);
-	for(uint8_t i = 0; i < amount_of_highscores; ++i) {
+	for(uint8_t i = 0; i < highscores.size(); ++i) {
 		delwin(highscores_messages_window[i]);
 		highscores_messages_window[i] = nullptr;
 	}
 	delete[] highscores_messages_window;
-	if(!amount_of_highscores) {
+	if(!highscores.size()) {
 		delwin(none_message_window);
 		none_message_window = nullptr;
 	}
@@ -713,4 +708,4 @@ void display_highscorescreen(WINDOW * parent_window, uint8_t amount_of_highscore
 	menu_button_window         = nullptr;
 }
 
-void play_game(WINDOW * parent_window, high_data * const highscores) {}
+void play_game(WINDOW * parent_window, vector<high_data> & highscores) {}

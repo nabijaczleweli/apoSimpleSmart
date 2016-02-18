@@ -43,7 +43,7 @@ void serialize(Archive & archive, game_data & gd) {
 }
 
 
-game_data load__game_data__from_file(const std::string & filename) {
+game_data load_game_data_from_file(const std::string & filename) {
 	game_data res;
 
 	ifstream ifs(filename);
@@ -53,7 +53,7 @@ game_data load__game_data__from_file(const std::string & filename) {
 	return res;
 }
 
-void save__game_data__to_file(const game_data & input_gd, const std::string & filename) {
+void save_game_data_to_file(const game_data & input_gd, const std::string & filename) {
 	vector<string> asdf;
 	ofstream ofs(filename);
 	cereal::JSONOutputArchive archive(ofs);

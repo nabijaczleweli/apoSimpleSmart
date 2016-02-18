@@ -40,5 +40,5 @@ struct game_data {
 };
 
 
-game_data load__game_data__from_file(const std::string & filename = "gd.dat");
-void save__game_data__to_file(const game_data & input_gd, const std::string & filename = "gd.dat");
+game_data load_game_data_from_file(const std::string & filename = "gd.dat");
+void save_game_data_to_file(const game_data & input_gd, const std::string & filename = "gd.dat");
