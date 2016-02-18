@@ -567,41 +567,42 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 
 	int maxX, maxY;
 	getmaxyx(parent_window, maxY, maxX);
-	WINDOW *menu_button_window         = derwin(parent_window, 3, 6, maxY - 3, maxX - 6),
-	       *description_message_window = derwin(parent_window, 2, maximal_whole_width, 0, (maxX - maximal_whole_width) / 2),
-	       **highscores_messages_window = new WINDOW *[highscores.size()],
-	       *none_message_window = highscores.size() ? nullptr : derwin(parent_window, 2, 23, maxY - 2, (maxX - 23) / 2);
+	window_p menu_button_window(derwin(parent_window, 3, 6, maxY - 3, maxX - 6));
+	window_p description_message_window(derwin(parent_window, 2, maximal_whole_width, 0, (maxX - maximal_whole_width) / 2));
+	window_p none_message_window(highscores.size() ? nullptr : derwin(parent_window, 2, 23, maxY - 2, (maxX - 23) / 2));
+	vector<window_p> highscores_messages_window;
 	for(auto i = 0u; i < highscores.size(); ++i)
-		highscores_messages_window[i] = derwin(parent_window, 1, maximal_whole_width, i + 1, (maxX - maximal_whole_width) / 2), touchwin(parent_window);
+		highscores_messages_window.emplace_back(derwin(parent_window, 1, maximal_whole_width, i + 1, (maxX - maximal_whole_width) / 2));
+	touchwin(parent_window);
 	wrefresh(parent_window);
 
-	wborder(menu_button_window, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-	mvwaddstr(menu_button_window, 1, 1, "Menu");
-	mvwchgat(menu_button_window, 1, 1, 1, A_BOLD, 0, nullptr);
-	wrefresh(description_message_window);
-	mvwaddstr(description_message_window, 0, 0, "Name");
+	wborder(menu_button_window.get(), ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+	mvwaddstr(menu_button_window.get(), 1, 1, "Menu");
+	mvwchgat(menu_button_window.get(), 1, 1, 1, A_BOLD, 0, nullptr);
+	wrefresh(description_message_window.get());
+	mvwaddstr(description_message_window.get(), 0, 0, "Name");
 	for(auto i = 4; i < NAME_MAX; ++i)
-		waddch(description_message_window, ' ');
-	waddstr(description_message_window, "|Score");
+		waddch(description_message_window.get(), ' ');
+	waddstr(description_message_window.get(), "|Score");
 	for(auto i = 5u; i < maximal_score_width; ++i)
-		waddch(description_message_window, ' ');
-	waddstr(description_message_window, "|Level");
-	wrefresh(description_message_window);
+		waddch(description_message_window.get(), ' ');
+	waddstr(description_message_window.get(), "|Level");
+	wrefresh(description_message_window.get());
 
 	for(auto i = 0u; i < highscores.size(); ++i) {
-		wmove(highscores_messages_window[i], 0, 0);
-		wprintw(highscores_messages_window[i], "%.*s", highscores[i].name.size(), highscores[i].name.c_str());
+		wmove(highscores_messages_window[i].get(), 0, 0);
+		wprintw(highscores_messages_window[i].get(), "%.*s", highscores[i].name.size(), highscores[i].name.c_str());
 		for(auto j = highscores[i].name.size(); j < NAME_MAX; ++j)
-			waddch(highscores_messages_window[i], ' ');
-		wprintw(highscores_messages_window[i], "|%u", highscores[i].score);
+			waddch(highscores_messages_window[i].get(), ' ');
+		wprintw(highscores_messages_window[i].get(), "|%u", highscores[i].score);
 		for(auto j = to_string(highscores[i].score).size(); j < maximal_score_width; ++j)
-			waddch(highscores_messages_window[i], ' ');
-		wprintw(highscores_messages_window[i], "|%hu", highscores[i].level);
-		wrefresh(highscores_messages_window[i]);
+			waddch(highscores_messages_window[i].get(), ' ');
+		wprintw(highscores_messages_window[i].get(), "|%hu", highscores[i].level);
+		wrefresh(highscores_messages_window[i].get());
 	}
 	if(!highscores.size()) {
-		mvwaddstr(none_message_window, 0, 0, "None yet! Go make some!");
-		wrefresh(none_message_window);
+		mvwaddstr(none_message_window.get(), 0, 0, "None yet! Go make some!");
+		wrefresh(none_message_window.get());
 	}
 
 	halfdelay(1);
@@ -619,41 +620,20 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 				break;
 			case KEY_MOUSE:
 				request_mouse_pos();
-				int *mouseX = new int, *mouseY = new int;
+				int mouseX, mouseY;
 
-				wmouse_position(menu_button_window, mouseX, mouseY);
-				if(*mouseX != -1 && *mouseY != -1)
+				wmouse_position(menu_button_window.get(), &mouseX,& mouseY);
+				if(mouseX != -1 && mouseY != -1)
 					clicked = true;
-
-				delete mouseX;
-				delete mouseY;
-				mouseX = nullptr;
-				mouseY = nullptr;
-
 				break;
 		}
-	nodelay(menu_button_window, true);
-	nodelay(description_message_window, true);
+	nodelay(menu_button_window.get(), true);
+	nodelay(description_message_window.get(), true);
 	if(!highscores.size())
-		nodelay(none_message_window, true);
-	for(auto i = 0u; i < highscores.size(); ++i)
-		nodelay(highscores_messages_window[i], true);
+		nodelay(none_message_window.get(), true);
+	for(const auto & highscore_message_window : highscores_messages_window)
+		nodelay(highscore_message_window.get(), true);
 	mousemask(0, nullptr);
-
-	delwin(menu_button_window);
-	delwin(description_message_window);
-	for(auto i = 0u; i < highscores.size(); ++i) {
-		delwin(highscores_messages_window[i]);
-		highscores_messages_window[i] = nullptr;
-	}
-	delete[] highscores_messages_window;
-	if(!highscores.size()) {
-		delwin(none_message_window);
-		none_message_window = nullptr;
-	}
-	highscores_messages_window = nullptr;
-	description_message_window = nullptr;
-	menu_button_window         = nullptr;
 }
 
 void play_game(WINDOW *, vector<high_data> &) {}
