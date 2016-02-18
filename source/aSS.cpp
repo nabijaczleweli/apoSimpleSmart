@@ -315,50 +315,50 @@ mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_a
 void display_creditsscreen(WINDOW * parent_window, const bool put_apo_in) {
 	int maxX, maxY;
 	getmaxyx(parent_window, maxY, maxX);
-	WINDOW *menu_button_window       = derwin(parent_window, 3, 6, maxY - 3, maxX - 6),
-	       *bigstring_message_window = derwin(parent_window, 8, 42, (maxY - 8) / 2, (maxX - 42) / 2),
-	       *credit_apo_message_window = derwin(parent_window, 3, 35, 0, (maxX - 35) / 2),
-	       *credit_me_message_window = derwin(parent_window, 3, 33, maxY - 3, (maxX - 33) / 2),
-	       *credit_bcl_message_window = derwin(parent_window, 3, 23, 3, (maxX - 23) / 2);
+	window_p menu_button_window(derwin(parent_window, 3, 6, maxY - 3, maxX - 6));
+	window_p bigstring_message_window(derwin(parent_window, 8, 42, (maxY - 8) / 2, (maxX - 42) / 2));
+	window_p credit_apo_message_window(derwin(parent_window, 3, 35, 0, (maxX - 35) / 2));
+	window_p credit_me_message_window(derwin(parent_window, 3, 48, maxY - 3, (maxX - 48) / 2));
+	window_p credit_cereal_message_window(derwin(parent_window, 3, 31, 3, (maxX - 31) / 2));
 	touchwin(parent_window);
 	wrefresh(parent_window);
 
-	wborder(menu_button_window, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-	mvwaddstr(menu_button_window, 1, 1, "Menu");
-	mvwchgat(menu_button_window, 1, 1, 1, A_BOLD, 0, nullptr);
-	wrefresh(menu_button_window);
+	wborder(menu_button_window.get(), ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+	mvwaddstr(menu_button_window.get(), 1, 1, "Menu");
+	mvwchgat(menu_button_window.get(), 1, 1, 1, A_BOLD, 0, nullptr);
+	wrefresh(menu_button_window.get());
 
 	if(put_apo_in) {
-		mvwaddstr(bigstring_message_window, 0, 0, R"(  __   _   __       __           //@@\\   )");
-		mvwaddstr(bigstring_message_window, 1, 0, R"(//  \\|_|//  \\/ \//  \\   __   _||  ||   )");
-		mvwaddstr(bigstring_message_window, 2, 0, R"(||     _ ||  ||| |||  ||\//  \\| \\__//_  )");
-		mvwaddstr(bigstring_message_window, 3, 0, R"(\\__  | |\\__//\_|\\__//|||  ||| |//___ \\)");
-		mvwaddstr(bigstring_message_window, 4, 0, R"(    \\| |  //\\  |//\\  |\\__//| |||___\||)");
-		mvwaddstr(bigstring_message_window, 5, 0, R"(    ||| | //  \\ |/  \\ |      | |||      )");
-		mvwaddstr(bigstring_message_window, 6, 0, R"(\\__//|_|//    \|/    \\|      \_\\\____//)");
-		mvwaddstr(bigstring_message_window, 0, 35, "\304\304");
+		mvwaddstr(bigstring_message_window.get(), 0, 0, R"(  __   _   __       __           //@@\\   )");
+		mvwaddstr(bigstring_message_window.get(), 1, 0, R"(//  \\|_|//  \\/ \//  \\   __   _||  ||   )");
+		mvwaddstr(bigstring_message_window.get(), 2, 0, R"(||     _ ||  ||| |||  ||\//  \\| \\__//_  )");
+		mvwaddstr(bigstring_message_window.get(), 3, 0, R"(\\__  | |\\__//\_|\\__//|||  ||| |//___ \\)");
+		mvwaddstr(bigstring_message_window.get(), 4, 0, R"(    \\| |  //\\  |//\\  |\\__//| |||___\||)");
+		mvwaddstr(bigstring_message_window.get(), 5, 0, R"(    ||| | //  \\ |/  \\ |      | |||      )");
+		mvwaddstr(bigstring_message_window.get(), 6, 0, R"(\\__//|_|//    \|/    \\|      \_\\\____//)");
+		mvwaddstr(bigstring_message_window.get(), 0, 35, "\304\304");
 	} else {
-		mvwaddstr(bigstring_message_window, 0, 0, R"(  __   _                                  )");
-		mvwaddstr(bigstring_message_window, 1, 0, R"(//  \\|_|                  __   _         )");
-		mvwaddstr(bigstring_message_window, 2, 0, R"(||     _                \//  \\| |  ____  )");
-		mvwaddstr(bigstring_message_window, 3, 0, R"(\\__  | |               |||  ||| |//___ \\)");
-		mvwaddstr(bigstring_message_window, 4, 0, R"(    \\| |  //\\   //\\  |\\__//| |||___\||)");
-		mvwaddstr(bigstring_message_window, 5, 0, R"(    ||| | //  \\ //  \\ |      | |||      )");
-		mvwaddstr(bigstring_message_window, 6, 0, R"(\\__//|_|//    \|/    \\|      \_\\\____//)");
+		mvwaddstr(bigstring_message_window.get(), 0, 0, R"(  __   _                                  )");
+		mvwaddstr(bigstring_message_window.get(), 1, 0, R"(//  \\|_|                  __   _         )");
+		mvwaddstr(bigstring_message_window.get(), 2, 0, R"(||     _                \//  \\| |  ____  )");
+		mvwaddstr(bigstring_message_window.get(), 3, 0, R"(\\__  | |               |||  ||| |//___ \\)");
+		mvwaddstr(bigstring_message_window.get(), 4, 0, R"(    \\| |  //\\   //\\  |\\__//| |||___\||)");
+		mvwaddstr(bigstring_message_window.get(), 5, 0, R"(    ||| | //  \\ //  \\ |      | |||      )");
+		mvwaddstr(bigstring_message_window.get(), 6, 0, R"(\\__//|_|//    \|/    \\|      \_\\\____//)");
 	}
-	wrefresh(bigstring_message_window);
+	wrefresh(bigstring_message_window.get());
 
-	mvwaddstr(credit_apo_message_window, 0, 0, "Devs at Apo-Games for original game");
-	mvwaddstr(credit_apo_message_window, 1, 0, "        http://goo.gl/QKqIK1       ");
-	wrefresh(credit_apo_message_window);
+	mvwaddstr(credit_apo_message_window.get(), 0, 0, "Devs at Apo-Games for original game");
+	mvwaddstr(credit_apo_message_window.get(), 1, 0, "        http://goo.gl/QKqIK1       ");
+	wrefresh(credit_apo_message_window.get());
 
-	mvwaddstr(credit_me_message_window, 0, 0, "Everything else by nabijaczleweli");
-	mvwaddstr(credit_me_message_window, 1, 0, "https://github.com/nabijaczleweli");
-	wrefresh(credit_me_message_window);
+	mvwaddstr(credit_me_message_window.get(), 0, 0, "                 Repo at GitHub                 ");
+	mvwaddstr(credit_me_message_window.get(), 1, 0, "https://github.com/nabijaczleweli/apoSimpleSmart");
+	wrefresh(credit_me_message_window.get());
 
-	mvwaddstr(credit_bcl_message_window, 0, 0, "Marcus Geelnard for bcl");
-	mvwaddstr(credit_bcl_message_window, 1, 0, "  http://bcl.comli.eu  ");
-	wrefresh(credit_bcl_message_window);
+	mvwaddstr(credit_cereal_message_window.get(), 0, 0, "       USCiLab for cereal      ");
+	mvwaddstr(credit_cereal_message_window.get(), 1, 0, "http://uscilab.github.io/cereal");
+	wrefresh(credit_cereal_message_window.get());
 
 
 	halfdelay(1);
@@ -376,57 +376,40 @@ void display_creditsscreen(WINDOW * parent_window, const bool put_apo_in) {
 				break;
 			case KEY_MOUSE:
 				request_mouse_pos();
-				int *mouseX = new int, *mouseY = new int;
+				int mouseX, mouseY;
 
-				wmouse_position(menu_button_window, mouseX, mouseY);
-				if(*mouseX != -1 && *mouseY != -1)
+				wmouse_position(menu_button_window.get(), &mouseX, &mouseY);
+				if(mouseX != -1 && mouseY != -1)
 					clicked = true;
-
-				delete mouseX;
-				delete mouseY;
-				mouseX = nullptr;
-				mouseY = nullptr;
-
 				break;
 		}
-	nodelay(menu_button_window, true);
+	nodelay(menu_button_window.get(), true);
 	mousemask(0, nullptr);
-
-	delwin(menu_button_window);
-	delwin(bigstring_message_window);
-	delwin(credit_apo_message_window);
-	delwin(credit_me_message_window);
-	delwin(credit_bcl_message_window);
-	menu_button_window        = nullptr;
-	bigstring_message_window  = nullptr;
-	credit_apo_message_window = nullptr;
-	credit_me_message_window  = nullptr;
-	credit_bcl_message_window = nullptr;
 }
 
 string display_optionsscreen(WINDOW * parent_window, const string & name) {
 	int maxX, maxY;
 	getmaxyx(parent_window, maxY, maxX);
-	WINDOW *menu_button_window       = derwin(parent_window, 3, 6, maxY - 3, maxX - 6),
-	       *bigstring_message_window = derwin(parent_window, 7, 21, (maxY - 7) / 2, (maxX - 21) / 2),
-	       *name_editbox_window = derwin(parent_window, 3, NAME_MAX + 2, 0, (maxX - (NAME_MAX + 2)) / 2);
+	window_p menu_button_window(derwin(parent_window, 3, 6, maxY - 3, maxX - 6));
+	window_p bigstring_message_window(derwin(parent_window, 7, 21, (maxY - 7) / 2, (maxX - 21) / 2));
+	window_p name_editbox_window(derwin(parent_window, 3, NAME_MAX + 2, 0, (maxX - (NAME_MAX + 2)) / 2));
 	touchwin(parent_window);
 	wrefresh(parent_window);
 
-	wborder(menu_button_window, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-	mvwaddstr(menu_button_window, 1, 1, "Menu");
-	mvwchgat(menu_button_window, 1, 1, 1, A_BOLD, 0, nullptr);
-	wrefresh(menu_button_window);
-	mvwaddstr(bigstring_message_window, 0, 0, R"(           __        )");
-	mvwaddstr(bigstring_message_window, 1, 0, R"(        \//  \\      )");
-	mvwaddstr(bigstring_message_window, 2, 0, R"(  __    |||  ||  __  )");
-	mvwaddstr(bigstring_message_window, 3, 0, R"(//  \\/ |\\__////  \\)");
-	mvwaddstr(bigstring_message_window, 4, 0, R"(||  ||| |      ||  ||)");
-	mvwaddstr(bigstring_message_window, 5, 0, R"(\\__//\_|      \\__//)");
-	wrefresh(bigstring_message_window);
-	wborder(name_editbox_window, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-	mvwaddstr(name_editbox_window, 0, 1, "Name");
-	wrefresh(name_editbox_window);
+	wborder(menu_button_window.get(), ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+	mvwaddstr(menu_button_window.get(), 1, 1, "Menu");
+	mvwchgat(menu_button_window.get(), 1, 1, 1, A_BOLD, 0, nullptr);
+	wrefresh(menu_button_window.get());
+	mvwaddstr(bigstring_message_window.get(), 0, 0, R"(           __        )");
+	mvwaddstr(bigstring_message_window.get(), 1, 0, R"(        \//  \\      )");
+	mvwaddstr(bigstring_message_window.get(), 2, 0, R"(  __    |||  ||  __  )");
+	mvwaddstr(bigstring_message_window.get(), 3, 0, R"(//  \\/ |\\__////  \\)");
+	mvwaddstr(bigstring_message_window.get(), 4, 0, R"(||  ||| |      ||  ||)");
+	mvwaddstr(bigstring_message_window.get(), 5, 0, R"(\\__//\_|      \\__//)");
+	wrefresh(bigstring_message_window.get());
+	wborder(name_editbox_window.get(), ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+	mvwaddstr(name_editbox_window.get(), 0, 1, "Name");
+	wrefresh(name_editbox_window.get());
 
 	maxX = -1;
 	maxY = -1;
@@ -454,29 +437,24 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 					break;
 				case KEY_MOUSE:
 					request_mouse_pos();
-					int *mouseX = new int, *mouseY = new int;
+					int mouseX, mouseY;
 
-					wmouse_position(menu_button_window, mouseX, mouseY);
-					if(*mouseX != -1 && *mouseY != -1)
+					wmouse_position(menu_button_window.get(), &mouseX, &mouseY);
+					if(mouseX != -1 && mouseY != -1)
 						exited = true;
-
-					delete mouseX;
-					delete mouseY;
-					mouseX = nullptr;
-					mouseY = nullptr;
 					break;
 			}
 		} else if(selected == 1) {
 			if(maxX == -1 || maxY == -1) {
 				curs_set(1);
-				getmaxyx(name_editbox_window, maxY, maxX);
-				wmove(name_editbox_window, 1, 1);
+				getmaxyx(name_editbox_window.get(), maxY, maxX);
+				wmove(name_editbox_window.get(), 1, 1);
 				for(int i = 0; i < maxX - 2; ++i)
-					waddch(name_editbox_window, ' ');
-				mvwaddstr(name_editbox_window, 1, 1, newname.c_str());
-				wrefresh(name_editbox_window);
+					waddch(name_editbox_window.get(), ' ');
+				mvwaddstr(name_editbox_window.get(), 1, 1, newname.c_str());
+				wrefresh(name_editbox_window.get());
 			}
-			const char c = wgetch(name_editbox_window);
+			const char c = wgetch(name_editbox_window.get());
 			if(c == ERR)
 				continue;
 			else if(c == KEY_ESC) {
@@ -499,27 +477,20 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 			} else if(c == BACKSPACE) {
 				if(newname.size()) {
 					newname.pop_back();
-					wprintw(name_editbox_window, "%c %c", BACKSPACE, BACKSPACE);
-					wrefresh(name_editbox_window);
+					wprintw(name_editbox_window.get(), "%c %c", BACKSPACE, BACKSPACE);
+					wrefresh(name_editbox_window.get());
 				}
 			} else if(static_cast<int>(newname.size()) < NAME_MAX) {
 				newname.push_back(c);
-				waddch(name_editbox_window, c);
-				wrefresh(name_editbox_window);
+				waddch(name_editbox_window.get(), c);
+				wrefresh(name_editbox_window.get());
 			}
 		}
 	}
-	nodelay(menu_button_window, true);
-	nodelay(bigstring_message_window, true);
-	nodelay(name_editbox_window, true);
+	nodelay(menu_button_window.get(), true);
+	nodelay(bigstring_message_window.get(), true);
+	nodelay(name_editbox_window.get(), true);
 	mousemask(0, nullptr);
-
-	delwin(menu_button_window);
-	delwin(bigstring_message_window);
-	delwin(name_editbox_window);
-	menu_button_window       = nullptr;
-	bigstring_message_window = nullptr;
-	name_editbox_window      = nullptr;
 
 	return newname;
 }
@@ -527,38 +498,39 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 void display_tutorialscreen(WINDOW * parent_window) {
 	int maxX, maxY;
 	getmaxyx(parent_window, maxY, maxX);
-	WINDOW *menu_button_window = derwin(parent_window, 3, 6, maxY - 3, maxX - 6), *moving_message_window = derwin(parent_window, 2, 37, 1, (maxX - 38) / 2),
-	       *clearing_message_window = derwin(parent_window, 2, 47, 3, (maxX - 48) / 2),
-	       *direction_message_window = derwin(parent_window, 4, 33, maxY - 4, (maxX - 33) / 2),
-	       *bigstring_message_window = derwin(parent_window, 8, 20, (maxY - 8) / 2, (maxX - 20) / 2);
+	window_p menu_button_window(derwin(parent_window, 3, 6, maxY - 3, maxX - 6));
+	window_p moving_message_window(derwin(parent_window, 2, 37, 1, (maxX - 38) / 2));
+	window_p clearing_message_window(derwin(parent_window, 2, 47, 3, (maxX - 48) / 2));
+	window_p direction_message_window(derwin(parent_window, 4, 33, maxY - 4, (maxX - 33) / 2));
+	window_p bigstring_message_window(derwin(parent_window, 8, 20, (maxY - 8) / 2, (maxX - 20) / 2));
 	touchwin(parent_window);
 	wrefresh(parent_window);
 
-	wborder(menu_button_window, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-	mvwaddstr(menu_button_window, 1, 1, "Menu");
-	mvwchgat(menu_button_window, 1, 1, 1, A_BOLD, 0, nullptr);
-	wrefresh(menu_button_window);
-	mvwaddstr(bigstring_message_window, 0, 0, R"(          __    __  )");
-	mvwaddstr(bigstring_message_window, 1, 0, R"(        //  \\//  \\)");
-	mvwaddstr(bigstring_message_window, 2, 0, R"(        ||    ||    )");
-	mvwaddstr(bigstring_message_window, 3, 0, R"(  __    \\__  \\__  )");
-	mvwaddstr(bigstring_message_window, 4, 0, R"(//  \\/     \\    \\)");
-	mvwaddstr(bigstring_message_window, 5, 0, R"(||  |||     ||    ||)");
-	mvwaddstr(bigstring_message_window, 6, 0, R"(\\__//\_\\__//\\__//)");
-	wrefresh(bigstring_message_window);
-	mvwaddstr(moving_message_window, 0, 0, "  Start moving by touching on a piece");
-	mvwaddch(moving_message_window, 0, 0, right_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_WHITE));
-	wrefresh(moving_message_window);
-	mvwaddstr(clearing_message_window, 0, 0, "   Clear all colored pieces to finish the level");
-	mvwaddch(clearing_message_window, 0, 0, up_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_BLUE));
-	mvwaddch(clearing_message_window, 0, 1, left_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_RED));
-	wrefresh(clearing_message_window);
-	mvwaddstr(direction_message_window, 0, 0, "                                 ");
-	mvwaddstr(direction_message_window, 1, 0, " Whenever a new piece is reached ");
-	mvwaddstr(direction_message_window, 2, 0, "movement changes to its direction");
-	mvwaddch(direction_message_window, 0, 15, down_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_WHITE));
-	mvwaddch(direction_message_window, 0, 16, up_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_GREEN));
-	wrefresh(direction_message_window);
+	wborder(menu_button_window.get(), ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+	mvwaddstr(menu_button_window.get(), 1, 1, "Menu");
+	mvwchgat(menu_button_window.get(), 1, 1, 1, A_BOLD, 0, nullptr);
+	wrefresh(menu_button_window.get());
+	mvwaddstr(bigstring_message_window.get(), 0, 0, R"(          __    __  )");
+	mvwaddstr(bigstring_message_window.get(), 1, 0, R"(        //  \\//  \\)");
+	mvwaddstr(bigstring_message_window.get(), 2, 0, R"(        ||    ||    )");
+	mvwaddstr(bigstring_message_window.get(), 3, 0, R"(  __    \\__  \\__  )");
+	mvwaddstr(bigstring_message_window.get(), 4, 0, R"(//  \\/     \\    \\)");
+	mvwaddstr(bigstring_message_window.get(), 5, 0, R"(||  |||     ||    ||)");
+	mvwaddstr(bigstring_message_window.get(), 6, 0, R"(\\__//\_\\__//\\__//)");
+	wrefresh(bigstring_message_window.get());
+	mvwaddstr(moving_message_window.get(), 0, 0, "  Start moving by touching on a piece");
+	mvwaddch(moving_message_window.get(), 0, 0, right_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_WHITE));
+	wrefresh(moving_message_window.get());
+	mvwaddstr(clearing_message_window.get(), 0, 0, "   Clear all colored pieces to finish the level");
+	mvwaddch(clearing_message_window.get(), 0, 0, up_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_BLUE));
+	mvwaddch(clearing_message_window.get(), 0, 1, left_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_RED));
+	wrefresh(clearing_message_window.get());
+	mvwaddstr(direction_message_window.get(), 0, 0, "                                 ");
+	mvwaddstr(direction_message_window.get(), 1, 0, " Whenever a new piece is reached ");
+	mvwaddstr(direction_message_window.get(), 2, 0, "movement changes to its direction");
+	mvwaddch(direction_message_window.get(), 0, 15, down_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_WHITE));
+	mvwaddch(direction_message_window.get(), 0, 16, up_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_GREEN));
+	wrefresh(direction_message_window.get());
 
 	halfdelay(1);
 	raw();
@@ -575,33 +547,18 @@ void display_tutorialscreen(WINDOW * parent_window) {
 				break;
 			case KEY_MOUSE:
 				request_mouse_pos();
-				int *mouseX = new int, *mouseY = new int;
+				int mouseX, mouseY;
 
-				wmouse_position(menu_button_window, mouseX, mouseY);
-				if(*mouseX != -1 && *mouseY != -1)
+				wmouse_position(menu_button_window.get(), &mouseX, &mouseY);
+				if(mouseX != -1 && mouseY != -1)
 					clicked = true;
-
-				delete mouseX;
-				delete mouseY;
-				mouseX = nullptr;
-				mouseY = nullptr;
-
 				break;
 		}
-	nodelay(menu_button_window, true);
-	nodelay(bigstring_message_window, true);
-	nodelay(moving_message_window, true);
-	nodelay(clearing_message_window, true);
+	nodelay(menu_button_window.get(), true);
+	nodelay(bigstring_message_window.get(), true);
+	nodelay(moving_message_window.get(), true);
+	nodelay(clearing_message_window.get(), true);
 	mousemask(0, nullptr);
-
-	delwin(menu_button_window);
-	delwin(bigstring_message_window);
-	delwin(moving_message_window);
-	delwin(clearing_message_window);
-	menu_button_window       = nullptr;
-	bigstring_message_window = nullptr;
-	moving_message_window    = nullptr;
-	clearing_message_window  = nullptr;
 }
 
 void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & highscores) {
@@ -699,4 +656,4 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 	menu_button_window         = nullptr;
 }
 
-void play_game(WINDOW * parent_window, vector<high_data> & highscores) {}
+void play_game(WINDOW *, vector<high_data> &) {}
