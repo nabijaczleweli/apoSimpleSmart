@@ -33,6 +33,7 @@
 #include "config.hpp"
 #include "game_data.hpp"
 #include "exceptions.hpp"
+#include "quickscope_wrapper.hpp"
 
 
 using namespace std;
@@ -73,6 +74,7 @@ int main(int, const char * const * argv) {
 	const auto config = options.first.value();
 
 	initscr();
+	quickscope_wrapper _endwin{[]() { endwin(); }};
 	halfdelay(1);
 	curs_set(0);
 	noecho();
@@ -85,25 +87,25 @@ int main(int, const char * const * argv) {
 		init_pair(COLOR_PAIR_WHITE, COLOR_BLACK, COLOR_WHITE);
 	}
 
-	WINDOW * main_screen = newwin(config.screen_height, config.screen_width, 0, 0);
+	window_p main_screen(newwin(config.screen_height, config.screen_width, 0, 0));
 
-	scrollok(main_screen, true);
-	clearok(main_screen, true);
+	scrollok(main_screen.get(), true);
+	clearok(main_screen.get(), true);
 	for(const string & str : {"apoSimpleSmart"}) {
-		mvwaddstr(main_screen, config.screen_height / 2, (config.screen_width - str.size()) / 2, str.c_str());
-		wrefresh(main_screen);
+		mvwaddstr(main_screen.get(), config.screen_height / 2, (config.screen_width - str.size()) / 2, str.c_str());
+		wrefresh(main_screen.get());
 		bool broke = false;
 		for(auto i = 0u; i < config.screen_height / 2 + 1; ++i) {
 			if(getch() != ERR) {
 				broke = true;
 				break;
 			}
-			wscrl(main_screen, 1);
-			wrefresh(main_screen);
+			wscrl(main_screen.get(), 1);
+			wrefresh(main_screen.get());
 		}
 		if(broke || getch() != ERR) {
-			wclear(main_screen);
-			wrefresh(main_screen);
+			wclear(main_screen.get());
+			wrefresh(main_screen.get());
 			break;
 		}
 	}
@@ -113,48 +115,40 @@ int main(int, const char * const * argv) {
 
 	bool shall_keep_going = true;
 	while(shall_keep_going)
-		switch(const int val = display_mainscreen(main_screen, config.put_apo_in_screens)) {
+		switch(const int val = display_mainscreen(main_screen.get(), config.put_apo_in_screens)) {
 			case mainscreen_selection::start:
-				play_game(main_screen, global_data.highscore);
+				play_game(main_screen.get(), global_data.highscore);
 				break;
 			case mainscreen_selection::tutorial:
-				wclear(main_screen);
-				display_tutorialscreen(main_screen);
-				wclear(main_screen);
+				wclear(main_screen.get());
+				display_tutorialscreen(main_screen.get());
+				wclear(main_screen.get());
 				break;
 			case mainscreen_selection::quit:
 				shall_keep_going = false;
 				break;
 			case mainscreen_selection::credits:
-				wclear(main_screen);
-				display_creditsscreen(main_screen, config.put_apo_in_screens);
-				wclear(main_screen);
+				wclear(main_screen.get());
+				display_creditsscreen(main_screen.get(), config.put_apo_in_screens);
+				wclear(main_screen.get());
 				break;
 			case mainscreen_selection::options:
-				wclear(main_screen);
-				global_data.name = display_optionsscreen(main_screen, global_data.name);
+				wclear(main_screen.get());
+				global_data.name = display_optionsscreen(main_screen.get(), global_data.name);
 				curs_set(0);
-				wclear(main_screen);
+				wclear(main_screen.get());
 
 				save_game_data_to_file(global_data);
 				break;
 			case mainscreen_selection::highscore:
-				wclear(main_screen);
-				display_highscorescreen(main_screen, global_data.highscore);
-				wclear(main_screen);
+				wclear(main_screen.get());
+				display_highscorescreen(main_screen.get(), global_data.highscore);
+				wclear(main_screen.get());
 				break;
 			default:
-				delwin(main_screen);
-				main_screen = nullptr;
-				endwin();
 				crash_report();
 				throw simplesmart_exception("Wrong value returned by display_mainscreen(); value returned: " + to_string(val) + "; expected: 0..5");
 		}
-
-
-	delwin(main_screen);
-	main_screen = nullptr;
-	endwin();
 }
 
 
@@ -174,14 +168,14 @@ mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_a
 	touchwin(parent_window);
 	wrefresh(parent_window);
 
-#define FOR_ALL_WINDOWS(func)   \
+#define FOR_ALL_WINDOWS(func)         \
 	func(start_button_window.get());    \
 	func(tutorial_button_window.get()); \
 	func(quit_button_window.get());     \
 	func(credits_button_window.get());  \
 	func(options_button_window.get());  \
 	func(highscore_button_window.get());
-#define FOR_ALL_WINDOWS_ARG(func, ...)       \
+#define FOR_ALL_WINDOWS_ARG(func, ...)             \
 	func(start_button_window.get(), __VA_ARGS__);    \
 	func(tutorial_button_window.get(), __VA_ARGS__); \
 	func(quit_button_window.get(), __VA_ARGS__);     \
@@ -622,7 +616,7 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 				request_mouse_pos();
 				int mouseX, mouseY;
 
-				wmouse_position(menu_button_window.get(), &mouseX,& mouseY);
+				wmouse_position(menu_button_window.get(), &mouseX, &mouseY);
 				if(mouseX != -1 && mouseY != -1)
 					clicked = true;
 				break;
