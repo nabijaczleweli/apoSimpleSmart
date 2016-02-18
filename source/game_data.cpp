@@ -46,9 +46,11 @@ void serialize(Archive & archive, game_data & gd) {
 game_data load_game_data_from_file(const std::string & filename) {
 	game_data res;
 
-	ifstream ifs(filename);
-	cereal::JSONInputArchive archive(ifs);
-	archive(res);
+	try {
+		ifstream ifs(filename);
+		cereal::JSONInputArchive archive(ifs);
+		archive(res);
+	} catch(cereal::RapidJSONException &) {}
 
 	return res;
 }
