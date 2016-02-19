@@ -26,16 +26,23 @@ include configMakefile
 OBJECTS := $(patsubst source/%.cpp,out/%.o,$(wildcard source/**.cpp))
 
 
-.PHONY : all clean exe
+.PHONY : all clean exe rust
 
 
-all : exe
+all : rust exe
 
 clean :
 	rm -rf out
 
 exe : $(OBJECTS)
-	$(CXX) $(CXXAR) $^ -oout/apoSimpleSmart $(LDAR)
+	$(CXX) $(CXXAR) $^ -oout/apoSimpleSmart $(LDAR) $(shell cat out/dependencies/librust_helpers.deps)
+
+rust : out/dependencies/librust_helpers.a
+
+
+out/dependencies/librust_helpers.a : $(wildcard dependencies/rust_helpers/**.rs)
+	@mkdir -p $(dir $@)
+	cd $(dir $@) && $(RS) $(RSAR) rust_helpers 2>&1 $(foreach s,$^,$(realpath $(s))) | grep "note: library:" | perl -pe "s/note: library: (.+)/-l\1/" > librust_helpers.deps
 
 
 out/%$(OBJ) : source/%.cpp
