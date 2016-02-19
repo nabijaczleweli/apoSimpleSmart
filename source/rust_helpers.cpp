@@ -25,6 +25,8 @@
 #include <cstdint>
 #include <vector>
 
+#include "game_data.hpp"
+
 
 using namespace std;
 
@@ -33,7 +35,7 @@ extern "C" int32_t rs_username(char * buf, uint64_t len);
 
 
 string username() {
-	vector<char> uname(256);
+	vector<char> uname(game_data::max_name_length);
 
 	const auto name_len = rs_username(&uname[0], uname.size());
 

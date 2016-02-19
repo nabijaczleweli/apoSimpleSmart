@@ -28,6 +28,8 @@
 #include "cereal/types/vector.hpp"
 #include "cereal/archives/json.hpp"
 
+#include "rust_helpers.hpp"
+
 
 using namespace std;
 
@@ -45,6 +47,7 @@ void serialize(Archive & archive, game_data & gd) {
 
 game_data load_game_data_from_file(const std::string & filename) {
 	game_data res;
+	res.name = username();
 
 	try {
 		ifstream ifs(filename);
