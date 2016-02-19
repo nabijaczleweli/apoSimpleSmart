@@ -34,6 +34,10 @@ using namespace std;
 using namespace std::experimental;
 
 
+static void print_error(const char * progname, const string & non_what, const string & config_filename, const pair<const string, string> & pr);
+static bool parse_boolean(const char * progname, const string & config_filename, const pair<const string, string> & pr, bool & error);
+
+
 pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 	string configfilename = "simple_smart.cfg";
 	for(unsigned int idx = 1; argv[idx]; ++idx) {
@@ -74,7 +78,7 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 
 
 	unsigned int matrix_width = 7, matrix_height = 7, screen_width = 80, screen_height = 25;
-	bool put_apo_in_screens          = false;
+	bool put_apo_in_screens = false;
 	ifstream configfile(configfilename);
 	if(!configfile)
 		ofstream(configfilename) << boolalpha << "Matrix height : " << matrix_height << "\n"
@@ -104,91 +108,136 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 			values.emplace(line.substr(0, pos), line.substr(pos + 3));
 		}
 
-#define ERRORMESSAGE(nonwhat)                                                                                                                         \
-	{                                                                                                                                                   \
-		cerr << *argv << ": warning: non-" << nonwhat << " value in \"" << configfilename << "\" at key \"" << pr.first << "\" for value \"" << pr.second \
-		     << "\" reverting to previous/default\n";                                                                                                     \
-		was_error = true;                                                                                                                                 \
-	}
-#define READPROPERTY(idname, errormsg, charcondition, setwithcondition) \
-	if(pr.first == idname) {                                              \
-		bool bad = false;                                                   \
-		for(const char & ch : pr.second)                                    \
-			if(!charcondition(ch)) {                                          \
-				ERRORMESSAGE(errormsg)                                          \
-				bad = true;                                                     \
-				break;                                                          \
-			}                                                                 \
-		if(bad)                                                             \
-			continue;                                                         \
-		setwithcondition                                                    \
-	}
-#define READBOOLEANPROPERTY(idname, varname)                                                       \
-	if(pr.first == idname) {                                                                         \
-		switch(pr.second.size()) {                                                                     \
-			case 1:                                                                                      \
-				switch(pr.second[0]) {                                                                     \
-					case '0':                                                                                \
-						varname = false;                                                                       \
-						break;                                                                                 \
-					case '1':                                                                                \
-						varname = true;                                                                        \
-						break;                                                                                 \
-					default:                                                                                 \
-						ERRORMESSAGE("boolean")                                                                \
-				}                                                                                          \
-				break;                                                                                     \
-			case 2:                                                                                      \
-				if(pr.second == "no")                                                                      \
-					varname = false;                                                                         \
-				else                                                                                       \
-					ERRORMESSAGE("boolean")                                                                  \
-				break;                                                                                     \
-			case 3:                                                                                      \
-				if(pr.second == "yes")                                                                     \
-					varname = true;                                                                          \
-				else                                                                                       \
-					ERRORMESSAGE("boolean")                                                                  \
-				break;                                                                                     \
-			case 4:                                                                                      \
-				if(pr.second == "true")                                                                    \
-					varname = true;                                                                          \
-				else                                                                                       \
-					ERRORMESSAGE("boolean")                                                                  \
-				break;                                                                                     \
-			case 5:                                                                                      \
-				if(pr.second == "false")                                                                   \
-					varname = false;                                                                         \
-				else                                                                                       \
-					ERRORMESSAGE("boolean")                                                                  \
-				break;                                                                                     \
-			default:                                                                                     \
-				ERRORMESSAGE("lengthy-enough (1..5) (actual length: " + to_string(pr.second.size()) + ")") \
-		}                                                                                              \
-	}
-
 		bool was_error = false;
 		for(const auto & pr : values) {
-			READPROPERTY("Matrix height", "positive", isdigit, if(const int temp = atoi(pr.second.c_str())) matrix_height = temp; else ERRORMESSAGE("positive"))
-			else READPROPERTY(
-			    "Matrix width", "positive", isdigit, if(const int temp = atoi(pr.second.c_str())) matrix_width = temp; else ERRORMESSAGE(
-			        "positive")) else READPROPERTY("Screen height", "nonnegative", isdigit(ch) || ch == '-' + ch -,
-			                                       screen_height = atoi(
-			                                           pr.second
-			                                               .c_str());) else READPROPERTY("Screen width", "nonnegative", isdigit(ch) || ch == '-' + ch -,
-			                                                                             screen_width = atoi(
-			                                                                                 pr.second
-			                                                                                     .c_str());) else READBOOLEANPROPERTY("Put \'apo\' in screens",
-			                                                                                                                          put_apo_in_screens)
+			if(pr.first == "Matrix height") {
+				bool bad = false;
+				for(const char & ch : pr.second)
+					if(!isdigit(ch)) {
+						print_error(*argv, "positive", configfilename, pr);
+						was_error = true;
+						bad       = true;
+						break;
+					}
+				if(bad)
+					continue;
+
+				if(const int temp = atoi(pr.second.c_str()))
+					matrix_height = temp;
+				else
+					print_error(*argv, "positive", configfilename, pr);
+			} else if(pr.first == "Matrix width") {
+				bool bad = false;
+				for(const char & ch : pr.second)
+					if(!isdigit(ch)) {
+						print_error(*argv, "positive", configfilename, pr);
+						was_error = true;
+						bad       = true;
+						break;
+					}
+				if(bad)
+					continue;
+
+				if(const int temp = atoi(pr.second.c_str()))
+					matrix_width = temp;
+				else
+					print_error(*argv, "positive", configfilename, pr);
+			} else if(pr.first == "Screen height") {
+				bool bad = false;
+				for(const char & ch : pr.second)
+					if(!isdigit(ch) || ch == '-') {
+						print_error(*argv, "nonnegative", configfilename, pr);
+						was_error = true;
+						bad       = true;
+						break;
+					}
+				if(bad)
+					continue;
+
+				screen_height = atoi(pr.second.c_str());
+			} else if(pr.first == "Screen width") {
+				bool bad = false;
+				for(const char & ch : pr.second)
+					if(!isdigit(ch) || ch == '-') {
+						print_error(*argv, "nonnegative", configfilename, pr);
+						was_error = true;
+						bad       = true;
+						break;
+					}
+				if(bad)
+					continue;
+
+				screen_width = atoi(pr.second.c_str());
+			} else if(pr.first == "Put \'apo\' in screens")
+				put_apo_in_screens = parse_boolean(*argv, configfilename, pr, was_error);
 		}
 		if(was_error) {
 			cout << "\n(press enter to continue)";
 			cin.get();
 		}
 	}
-#undef READBOOLEANPROPERTY
-#undef READPROPERTY
-#undef ERRORMESSAGE
 
 	return {make_optional(ass_config{matrix_width, matrix_height, screen_width, screen_height, put_apo_in_screens}), 0};
+}
+
+
+static void print_error(const char * progname, const string & non_what, const string & config_filename, const pair<const string, string> & pr) {
+	cerr << progname << ": warning: non-" << non_what << " value in \"" << config_filename << "\" at key \"" << pr.first << "\" for value \"" << pr.second
+	     << "\" reverting to previous/default\n";
+}
+
+static bool parse_boolean(const char * progname, const string & config_filename, const pair<const string, string> & pr, bool & error) {
+	switch(pr.second.size()) {
+		case 1:
+			switch(pr.second[0]) {
+				case '0':
+					return false;
+					break;
+				case '1':
+					return true;
+					break;
+				default:
+					print_error(progname, "boolean", config_filename, pr);
+					error = true;
+			}
+			break;
+		case 2:
+			if(pr.second == "no")
+				return false;
+			else {
+				print_error(progname, "boolean", config_filename, pr);
+				error = true;
+			}
+			break;
+		case 3:
+			if(pr.second == "yes")
+				return true;
+			else {
+				print_error(progname, "boolean", config_filename, pr);
+				error = true;
+			}
+			break;
+		case 4:
+			if(pr.second == "true")
+				return true;
+			else {
+				print_error(progname, "boolean", config_filename, pr);
+				error = true;
+			}
+			break;
+		case 5:
+			if(pr.second == "false")
+				return false;
+			else {
+				print_error(progname, "boolean", config_filename, pr);
+				error = true;
+			}
+			break;
+		default:
+			print_error(progname, "lengthy-enough (1..5) (actual length: " + to_string(pr.second.size()) + ")", config_filename, pr);
+			error = true;
+	}
+
+
+	return false;
 }
