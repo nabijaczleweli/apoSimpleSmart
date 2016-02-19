@@ -251,37 +251,37 @@ mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_a
 				mvwprintw(parent_window, 0, 0, "%d %d %d %d %d\t", Mouse_status.x, Mouse_status.y, Mouse_status.button[0], Mouse_status.button[1],
 				          Mouse_status.button[2]);  //  DEBUG
 				wrefresh(parent_window);            //  DEBUG
-				int *mouseX = new int, *mouseY = new int;
+				int mouseX, mouseY;
 
-				wmouse_position(start_button_window.get(), mouseX, mouseY);
-				if(*mouseX != -1 && *mouseY != -1) {
+				wmouse_position(start_button_window.get(), &mouseX, &mouseY);
+				if(mouseX != -1 && mouseY != -1) {
 					toret = mainscreen_selection::start;
-					mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
+					mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
 				} else {
-					wmouse_position(tutorial_button_window.get(), mouseX, mouseY);
-					if(*mouseX != -1 && *mouseY != -1) {
+					wmouse_position(tutorial_button_window.get(), &mouseX, &mouseY);
+					if(mouseX != -1 && mouseY != -1) {
 						toret = mainscreen_selection::tutorial;
-						mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
+						mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
 					} else {
-						wmouse_position(quit_button_window.get(), mouseX, mouseY);
-						if(*mouseX != -1 && *mouseY != -1) {
+						wmouse_position(quit_button_window.get(), &mouseX, &mouseY);
+						if(mouseX != -1 && mouseY != -1) {
 							toret = mainscreen_selection::quit;
-							mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
+							mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
 						} else {
-							wmouse_position(credits_button_window.get(), mouseX, mouseY);
-							if(*mouseX != -1 && *mouseY != -1) {
+							wmouse_position(credits_button_window.get(), &mouseX, &mouseY);
+							if(mouseX != -1 && mouseY != -1) {
 								toret = mainscreen_selection::credits;
-								mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
+								mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
 							} else {
-								wmouse_position(options_button_window.get(), mouseX, mouseY);
-								if(*mouseX != -1 && *mouseY != -1) {
+								wmouse_position(options_button_window.get(), &mouseX, &mouseY);
+								if(mouseX != -1 && mouseY != -1) {
 									toret = mainscreen_selection::options;
-									mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
+									mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
 								} else {
-									wmouse_position(highscore_button_window.get(), mouseX, mouseY);
-									if(*mouseX != -1 && *mouseY != -1) {
+									wmouse_position(highscore_button_window.get(), &mouseX, &mouseY);
+									if(mouseX != -1 && mouseY != -1) {
 										toret = mainscreen_selection::highscore;
-										mvwprintw(parent_window, toret, 0, "%d %d\t", *mouseX, *mouseY);
+										mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
 									}
 								}
 							}
@@ -289,11 +289,6 @@ mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_a
 					}
 				}
 				wrefresh(parent_window);
-
-				delete mouseX;
-				delete mouseY;
-				mouseX = nullptr;
-				mouseY = nullptr;
 				break;
 		}
 	}
