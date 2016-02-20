@@ -27,6 +27,9 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "cereal/cereal.hpp"
+#include "cereal/archives/json.hpp"
+
 #include "game_data.hpp"
 
 
@@ -34,7 +37,14 @@ using namespace std;
 using namespace std::experimental;
 
 
-static bool parse_boolean(const string & value);
+template <class Archive>
+void serialize(Archive & archive, ass_config & ac) {
+	archive(cereal::make_nvp("Matrix width", ac.matrix_width), cereal::make_nvp("Matrix height", ac.matrix_height),
+	        cereal::make_nvp("Screen width", ac.screen_width), cereal::make_nvp("Screen height", ac.screen_height),
+	        cereal::make_nvp("Put 'apo' in screens", ac.put_apo_in_screens));
+}
+
+
 static pair<optional<string>, int> commandline_options(const char * const * argv);
 
 
@@ -45,127 +55,22 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 	const auto configfilename = commandline.first.value();
 
 
-	unsigned int matrix_width = 7, matrix_height = 7, screen_width = 80, screen_height = 25;
-	bool put_apo_in_screens = false;
-	ifstream configfile(configfilename);
-	if(!configfile)
-		ofstream(configfilename) << boolalpha << "Matrix height : " << matrix_height << "\n"
-		                                                                                "Matrix width : "
-		                         << matrix_width << "\n"
-		                                            "Screen height : "
-		                         << screen_height << "\n"
-		                                             "Screen width : "
-		                         << screen_width << "\n"
-		                                            "Put \'apo\' in screens : "
-		                         << put_apo_in_screens << "\n";
-	else {
-		unordered_map<string, string> values(6);
-		string line;
-		while(getline(configfile, line)) {
-			if(line.front() == '#' || line.find(" : ") == string::npos)
-				continue;
-			while(isspace(line.front()))
-				line = line.substr(1);
-			if(line.front() == '#' || line.find(" : ") == string::npos)
-				continue;
-			while(isspace(line.back()))
-				line.pop_back();
-			if(line.find(" : ") == string::npos)
-				continue;
-			const size_t pos = line.find(" : ");
-			values.emplace(line.substr(0, pos), line.substr(pos + 3));
-		}
-
-		for(const auto & pr : values) {
-			if(pr.first == "Matrix height") {
-				bool bad = false;
-				for(const char ch : pr.second)
-					if(!isdigit(ch)) {
-						bad = true;
-						break;
-					}
-				if(bad)
-					continue;
-
-				if(const int temp = atoi(pr.second.c_str()))
-					matrix_height = temp;
-			} else if(pr.first == "Matrix width") {
-				bool bad = false;
-				for(const char ch : pr.second)
-					if(!isdigit(ch)) {
-						bad = true;
-						break;
-					}
-				if(bad)
-					continue;
-
-				if(const int temp = atoi(pr.second.c_str()))
-					matrix_width = temp;
-			} else if(pr.first == "Screen height") {
-				bool bad = false;
-				for(const char ch : pr.second)
-					if(!isdigit(ch) || ch == '-') {
-						bad = true;
-						break;
-					}
-				if(bad)
-					continue;
-
-				screen_height = atoi(pr.second.c_str());
-			} else if(pr.first == "Screen width") {
-				bool bad = false;
-				for(const char ch : pr.second)
-					if(!isdigit(ch) || ch == '-') {
-						bad = true;
-						break;
-					}
-				if(bad)
-					continue;
-
-				screen_width = atoi(pr.second.c_str());
-			} else if(pr.first == "Put \'apo\' in screens")
-				put_apo_in_screens = parse_boolean(pr.second);
-		}
+	ass_config cfg;
+	fstream configfile(configfilename, ios::in);
+	if(!configfile.is_open()) {
+		configfile.open(configfilename, ios::out);
+		cereal::JSONOutputArchive archive(configfile);
+		archive(cereal::make_nvp("apoSimpleSmart configuration", cfg));
+	} else {
+		cereal::JSONInputArchive archive(configfile);
+		try {
+			archive(cfg);
+		} catch(cereal::RapidJSONException &) {}
 	}
 
-	return {make_optional(ass_config{matrix_width, matrix_height, screen_width, screen_height, put_apo_in_screens}), 0};
+	return {make_optional(cfg), 0};
 }
 
-
-static bool parse_boolean(const string & value) {
-	switch(value.size()) {
-		case 1:
-			switch(value[0]) {
-				case '0':
-					return false;
-					break;
-				case '1':
-					return true;
-					break;
-			}
-			break;
-		case 2:
-			if(value == "no")
-				return false;
-			break;
-		case 3:
-			if(value == "yes")
-				return true;
-			break;
-		case 4:
-			if(value == "true")
-				return true;
-			else
-				break;
-		case 5:
-			if(value == "false")
-				return false;
-			break;
-	}
-
-
-	return false;
-}
 
 static pair<optional<string>, int> commandline_options(const char * const * argv) {
 	string configfilename = "simple_smart.cfg";

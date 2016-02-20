@@ -59,7 +59,6 @@ game_data load_game_data_from_file(const std::string & filename) {
 }
 
 void save_game_data_to_file(const game_data & input_gd, const std::string & filename) {
-	vector<string> asdf;
 	ofstream ofs(filename);
 	cereal::JSONOutputArchive archive(ofs);
 	archive(input_gd);
