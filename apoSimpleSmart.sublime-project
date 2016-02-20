@@ -3,7 +3,7 @@
 	[
 		{
 			"working_dir": "$project_path",
-			"shell_cmd": "make",
+			"shell_cmd": "make -j4",
 			"name": "Build apoSimpleSmart",
 		}
 	],

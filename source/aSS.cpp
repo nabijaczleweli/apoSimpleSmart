@@ -67,8 +67,8 @@ constexpr static const chtype up_pointing_moving_thing    = '^';
 constexpr static const chtype down_pointing_moving_thing  = 'U';
 
 
-int main(int, const char * const * argv) {
-	const auto options = parse_options(argv);
+int main(int argc, const char * const * argv) {
+	const auto options = parse_options(argc, argv);
 	if(!options.first)
 		return options.second;
 	const auto config = options.first.value();

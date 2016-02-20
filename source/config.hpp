@@ -37,4 +37,4 @@ struct ass_config {
 };
 
 
-std::pair<std::experimental::optional<ass_config>, int> parse_options(const char * const * argv);
+std::pair<std::experimental::optional<ass_config>, int> parse_options(int argc, const char * const * argv);
