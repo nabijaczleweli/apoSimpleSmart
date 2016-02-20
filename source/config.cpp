@@ -35,45 +35,14 @@ using namespace std::experimental;
 
 
 static bool parse_boolean(const string & value);
+static pair<optional<string>, int> commandline_options(const char * const * argv);
 
 
 pair<optional<ass_config>, int> parse_options(const char * const * argv) {
-	string configfilename = "simple_smart.cfg";
-	for(unsigned int idx = 1; argv[idx]; ++idx) {
-		const char * const arg    = argv[idx];
-		const unsigned int arglen = strlen(arg);
-		if(*arg == '-' && arg[1]) {
-			if(arglen >= 13 && !memcmp(arg, "--configfile=", 13)) {
-				if(arglen == 13) {
-					cerr << *argv << ": error: missing filename after \'--configfile=\'\n";
-					return {nullopt, 1};
-				}
-				configfilename = arg + 13;
-			} else if(arglen >= 2 && !memcmp(arg, "-c", 2)) {
-				if(arglen == 2) {
-					if(!argv[idx + 1]) {
-						cerr << *argv << ": error: missing filename after \'-c\'\n";
-						return {nullopt, 1};
-					}
-					configfilename = argv[idx + 1];
-					++idx;
-				} else
-					configfilename = arg + 2;
-			} else if(arglen >= 6 && !memcmp(arg, "--help", 6)) {
-				if(arglen == 6) {
-					cout << "Usage: " << *argv << " [options]\n"
-					                              "Options:\n"
-					                              "  --help                    Display this information\n"
-					                              "  --configfile=<file>       Use config file file; Default: simple_smart.cfg\n"
-					                              "  -c <file>                 Use config file file; Default: simple_smart.cfg\n"
-					                              "\n"
-					                              "For bug reporting instructions, please see:\n"
-					                              "<https://github.com/nabijaczleweli/apoSimpleSmart>.\n";
-				}
-				return {nullopt, 0};
-			}
-		}
-	}
+	const auto commandline = commandline_options(argv);
+	if(!commandline.first)
+		return {nullopt, commandline.second};
+	const auto configfilename = commandline.first.value();
 
 
 	unsigned int matrix_width = 7, matrix_height = 7, screen_width = 80, screen_height = 25;
@@ -186,7 +155,8 @@ static bool parse_boolean(const string & value) {
 		case 4:
 			if(value == "true")
 				return true;
-			else break;
+			else
+				break;
 		case 5:
 			if(value == "false")
 				return false;
@@ -195,4 +165,46 @@ static bool parse_boolean(const string & value) {
 
 
 	return false;
+}
+
+static pair<optional<string>, int> commandline_options(const char * const * argv) {
+	string configfilename = "simple_smart.cfg";
+
+	for(unsigned int idx = 1; argv[idx]; ++idx) {
+		const char * const arg    = argv[idx];
+		const unsigned int arglen = strlen(arg);
+		if(*arg == '-' && arg[1]) {
+			if(arglen >= 13 && !memcmp(arg, "--configfile=", 13)) {
+				if(arglen == 13) {
+					cerr << *argv << ": error: missing filename after \'--configfile=\'\n";
+					return {nullopt, 1};
+				}
+				configfilename = arg + 13;
+			} else if(arglen >= 2 && !memcmp(arg, "-c", 2)) {
+				if(arglen == 2) {
+					if(!argv[idx + 1]) {
+						cerr << *argv << ": error: missing filename after \'-c\'\n";
+						return {nullopt, 1};
+					}
+					configfilename = argv[idx + 1];
+					++idx;
+				} else
+					configfilename = arg + 2;
+			} else if(arglen >= 6 && !memcmp(arg, "--help", 6)) {
+				if(arglen == 6) {
+					cout << "Usage: " << *argv << " [options]\n"
+					                              "Options:\n"
+					                              "  --help                    Display this information\n"
+					                              "  --configfile=<file>       Use config file file; Default: simple_smart.cfg\n"
+					                              "  -c <file>                 Use config file file; Default: simple_smart.cfg\n"
+					                              "\n"
+					                              "For bug reporting instructions, please see:\n"
+					                              "<https://github.com/nabijaczleweli/apoSimpleSmart>.\n";
+				}
+				return {nullopt, 0};
+			}
+		}
+	}
+
+	return {make_optional(configfilename), 0};
 }

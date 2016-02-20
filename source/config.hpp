@@ -33,7 +33,7 @@ struct ass_config {
 	unsigned int screen_width  = 80;
 	unsigned int screen_height = 25;
 
-	bool put_apo_in_screens          = false;
+	bool put_apo_in_screens = false;
 };
 
 
