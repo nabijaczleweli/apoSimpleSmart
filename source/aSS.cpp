@@ -219,7 +219,6 @@ mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_a
 	nonl();
 	cbreak();
 	mainscreen_selection toret = static_cast<mainscreen_selection>(-1);
-	mousemask(ALL_MOUSE_EVENTS, nullptr);
 	while(toret == static_cast<mainscreen_selection>(-1)) {
 		switch(wgetch(parent_window)) {
 			case 's':
@@ -246,54 +245,9 @@ mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_a
 			case 'H':
 				toret = mainscreen_selection::highscore;
 				break;
-			case KEY_MOUSE:
-				request_mouse_pos();
-				mvwprintw(parent_window, 0, 0, "%d %d %d %d %d\t", Mouse_status.x, Mouse_status.y, Mouse_status.button[0], Mouse_status.button[1],
-				          Mouse_status.button[2]);  //  DEBUG
-				wrefresh(parent_window);            //  DEBUG
-				int mouseX, mouseY;
-
-				wmouse_position(start_button_window.get(), &mouseX, &mouseY);
-				if(mouseX != -1 && mouseY != -1) {
-					toret = mainscreen_selection::start;
-					mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
-				} else {
-					wmouse_position(tutorial_button_window.get(), &mouseX, &mouseY);
-					if(mouseX != -1 && mouseY != -1) {
-						toret = mainscreen_selection::tutorial;
-						mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
-					} else {
-						wmouse_position(quit_button_window.get(), &mouseX, &mouseY);
-						if(mouseX != -1 && mouseY != -1) {
-							toret = mainscreen_selection::quit;
-							mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
-						} else {
-							wmouse_position(credits_button_window.get(), &mouseX, &mouseY);
-							if(mouseX != -1 && mouseY != -1) {
-								toret = mainscreen_selection::credits;
-								mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
-							} else {
-								wmouse_position(options_button_window.get(), &mouseX, &mouseY);
-								if(mouseX != -1 && mouseY != -1) {
-									toret = mainscreen_selection::options;
-									mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
-								} else {
-									wmouse_position(highscore_button_window.get(), &mouseX, &mouseY);
-									if(mouseX != -1 && mouseY != -1) {
-										toret = mainscreen_selection::highscore;
-										mvwprintw(parent_window, toret, 0, "%d %d\t", mouseX, mouseY);
-									}
-								}
-							}
-						}
-					}
-				}
-				wrefresh(parent_window);
-				break;
 		}
 	}
 	FOR_ALL_WINDOWS_ARG(nodelay, true);
-	mousemask(0, nullptr);
 
 #undef FOR_ALL_WINDOWS
 #undef FOR_ALL_WINDOWS_ARG
@@ -354,7 +308,6 @@ void display_creditsscreen(WINDOW * parent_window, const bool put_apo_in) {
 	raw();
 	nonl();
 	cbreak();
-	mousemask(ALL_MOUSE_EVENTS, nullptr);
 	bool clicked = false;
 	while(!clicked)
 		switch(wgetch(parent_window)) {
@@ -363,17 +316,8 @@ void display_creditsscreen(WINDOW * parent_window, const bool put_apo_in) {
 			case CARRIAGE_RETURN:
 				clicked = true;
 				break;
-			case KEY_MOUSE:
-				request_mouse_pos();
-				int mouseX, mouseY;
-
-				wmouse_position(menu_button_window.get(), &mouseX, &mouseY);
-				if(mouseX != -1 && mouseY != -1)
-					clicked = true;
-				break;
 		}
 	nodelay(menu_button_window.get(), true);
-	mousemask(0, nullptr);
 }
 
 string display_optionsscreen(WINDOW * parent_window, const string & name) {
@@ -407,7 +351,6 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 	raw();
 	nonl();
 	cbreak();
-	mousemask(ALL_MOUSE_EVENTS, nullptr);
 	bool exited    = false;
 	int selected   = 1;
 	string newname = name;
@@ -423,14 +366,6 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 					break;
 				case TAB:
 					++selected;
-					break;
-				case KEY_MOUSE:
-					request_mouse_pos();
-					int mouseX, mouseY;
-
-					wmouse_position(menu_button_window.get(), &mouseX, &mouseY);
-					if(mouseX != -1 && mouseY != -1)
-						exited = true;
 					break;
 			}
 		} else if(selected == 1) {
@@ -479,7 +414,6 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 	nodelay(menu_button_window.get(), true);
 	nodelay(bigstring_message_window.get(), true);
 	nodelay(name_editbox_window.get(), true);
-	mousemask(0, nullptr);
 
 	return newname;
 }
@@ -525,7 +459,6 @@ void display_tutorialscreen(WINDOW * parent_window) {
 	raw();
 	nonl();
 	cbreak();
-	mousemask(ALL_MOUSE_EVENTS, nullptr);
 	bool clicked = false;
 	while(!clicked)
 		switch(wgetch(parent_window)) {
@@ -534,20 +467,11 @@ void display_tutorialscreen(WINDOW * parent_window) {
 			case CARRIAGE_RETURN:
 				clicked = true;
 				break;
-			case KEY_MOUSE:
-				request_mouse_pos();
-				int mouseX, mouseY;
-
-				wmouse_position(menu_button_window.get(), &mouseX, &mouseY);
-				if(mouseX != -1 && mouseY != -1)
-					clicked = true;
-				break;
 		}
 	nodelay(menu_button_window.get(), true);
 	nodelay(bigstring_message_window.get(), true);
 	nodelay(moving_message_window.get(), true);
 	nodelay(clearing_message_window.get(), true);
-	mousemask(0, nullptr);
 }
 
 void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & highscores) {
@@ -599,7 +523,6 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 	raw();
 	nonl();
 	cbreak();
-	mousemask(ALL_MOUSE_EVENTS, nullptr);
 	bool clicked = false;
 	while(!clicked)
 		switch(wgetch(parent_window)) {
@@ -608,14 +531,6 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 			case CARRIAGE_RETURN:
 				clicked = true;
 				break;
-			case KEY_MOUSE:
-				request_mouse_pos();
-				int mouseX, mouseY;
-
-				wmouse_position(menu_button_window.get(), &mouseX, &mouseY);
-				if(mouseX != -1 && mouseY != -1)
-					clicked = true;
-				break;
 		}
 	nodelay(menu_button_window.get(), true);
 	nodelay(description_message_window.get(), true);
@@ -623,7 +538,6 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 		nodelay(none_message_window.get(), true);
 	for(const auto & highscore_message_window : highscores_messages_window)
 		nodelay(highscore_message_window.get(), true);
-	mousemask(0, nullptr);
 }
 
 void play_game(WINDOW *, vector<high_data> &) {}
