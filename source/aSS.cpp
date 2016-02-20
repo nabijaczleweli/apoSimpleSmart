@@ -247,7 +247,6 @@ mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_a
 				break;
 		}
 	}
-	FOR_ALL_WINDOWS_ARG(nodelay, true);
 
 #undef FOR_ALL_WINDOWS
 #undef FOR_ALL_WINDOWS_ARG
@@ -308,16 +307,12 @@ void display_creditsscreen(WINDOW * parent_window, const bool put_apo_in) {
 	raw();
 	nonl();
 	cbreak();
-	bool clicked = false;
-	while(!clicked)
-		switch(wgetch(parent_window)) {
-			case 'm':
-			case 'M':
-			case CARRIAGE_RETURN:
-				clicked = true;
-				break;
-		}
-	nodelay(menu_button_window.get(), true);
+
+	while(true) {
+		const auto pressed = wgetch(parent_window);
+		if(pressed == 'm' || pressed == 'M' || pressed == CARRIAGE_RETURN)
+			break;
+	}
 }
 
 string display_optionsscreen(WINDOW * parent_window, const string & name) {
@@ -411,9 +406,6 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 			}
 		}
 	}
-	nodelay(menu_button_window.get(), true);
-	nodelay(bigstring_message_window.get(), true);
-	nodelay(name_editbox_window.get(), true);
 
 	return newname;
 }
@@ -459,19 +451,12 @@ void display_tutorialscreen(WINDOW * parent_window) {
 	raw();
 	nonl();
 	cbreak();
-	bool clicked = false;
-	while(!clicked)
-		switch(wgetch(parent_window)) {
-			case 'm':
-			case 'M':
-			case CARRIAGE_RETURN:
-				clicked = true;
-				break;
-		}
-	nodelay(menu_button_window.get(), true);
-	nodelay(bigstring_message_window.get(), true);
-	nodelay(moving_message_window.get(), true);
-	nodelay(clearing_message_window.get(), true);
+
+	while(true) {
+		const auto pressed = wgetch(parent_window);
+		if(pressed == 'm' || pressed == 'M' || pressed == CARRIAGE_RETURN)
+			break;
+	}
 }
 
 void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & highscores) {
@@ -523,21 +508,12 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 	raw();
 	nonl();
 	cbreak();
-	bool clicked = false;
-	while(!clicked)
-		switch(wgetch(parent_window)) {
-			case 'm':
-			case 'M':
-			case CARRIAGE_RETURN:
-				clicked = true;
-				break;
-		}
-	nodelay(menu_button_window.get(), true);
-	nodelay(description_message_window.get(), true);
-	if(!highscores.size())
-		nodelay(none_message_window.get(), true);
-	for(const auto & highscore_message_window : highscores_messages_window)
-		nodelay(highscore_message_window.get(), true);
+
+	while(true) {
+		const auto pressed = wgetch(parent_window);
+		if(pressed == 'm' || pressed == 'M' || pressed == CARRIAGE_RETURN)
+			break;
+	}
 }
 
 void play_game(WINDOW *, vector<high_data> &) {}
