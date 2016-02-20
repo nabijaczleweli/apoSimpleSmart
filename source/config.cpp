@@ -34,8 +34,7 @@ using namespace std;
 using namespace std::experimental;
 
 
-static void print_error(const char * progname, const string & non_what, const string & config_filename, const pair<const string, string> & pr);
-static bool parse_boolean(const char * progname, const string & config_filename, const pair<const string, string> & pr, bool & error);
+static bool parse_boolean(const string & value);
 
 
 pair<optional<ass_config>, int> parse_options(const char * const * argv) {
@@ -108,15 +107,12 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 			values.emplace(line.substr(0, pos), line.substr(pos + 3));
 		}
 
-		bool was_error = false;
 		for(const auto & pr : values) {
 			if(pr.first == "Matrix height") {
 				bool bad = false;
-				for(const char & ch : pr.second)
+				for(const char ch : pr.second)
 					if(!isdigit(ch)) {
-						print_error(*argv, "positive", configfilename, pr);
-						was_error = true;
-						bad       = true;
+						bad = true;
 						break;
 					}
 				if(bad)
@@ -124,15 +120,11 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 
 				if(const int temp = atoi(pr.second.c_str()))
 					matrix_height = temp;
-				else
-					print_error(*argv, "positive", configfilename, pr);
 			} else if(pr.first == "Matrix width") {
 				bool bad = false;
-				for(const char & ch : pr.second)
+				for(const char ch : pr.second)
 					if(!isdigit(ch)) {
-						print_error(*argv, "positive", configfilename, pr);
-						was_error = true;
-						bad       = true;
+						bad = true;
 						break;
 					}
 				if(bad)
@@ -140,15 +132,11 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 
 				if(const int temp = atoi(pr.second.c_str()))
 					matrix_width = temp;
-				else
-					print_error(*argv, "positive", configfilename, pr);
 			} else if(pr.first == "Screen height") {
 				bool bad = false;
-				for(const char & ch : pr.second)
+				for(const char ch : pr.second)
 					if(!isdigit(ch) || ch == '-') {
-						print_error(*argv, "nonnegative", configfilename, pr);
-						was_error = true;
-						bad       = true;
+						bad = true;
 						break;
 					}
 				if(bad)
@@ -157,11 +145,9 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 				screen_height = atoi(pr.second.c_str());
 			} else if(pr.first == "Screen width") {
 				bool bad = false;
-				for(const char & ch : pr.second)
+				for(const char ch : pr.second)
 					if(!isdigit(ch) || ch == '-') {
-						print_error(*argv, "nonnegative", configfilename, pr);
-						was_error = true;
-						bad       = true;
+						bad = true;
 						break;
 					}
 				if(bad)
@@ -169,11 +155,7 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 
 				screen_width = atoi(pr.second.c_str());
 			} else if(pr.first == "Put \'apo\' in screens")
-				put_apo_in_screens = parse_boolean(*argv, configfilename, pr, was_error);
-		}
-		if(was_error) {
-			cout << "\n(press enter to continue)";
-			cin.get();
+				put_apo_in_screens = parse_boolean(pr.second);
 		}
 	}
 
@@ -181,61 +163,34 @@ pair<optional<ass_config>, int> parse_options(const char * const * argv) {
 }
 
 
-static void print_error(const char * progname, const string & non_what, const string & config_filename, const pair<const string, string> & pr) {
-	cerr << progname << ": warning: non-" << non_what << " value in \"" << config_filename << "\" at key \"" << pr.first << "\" for value \"" << pr.second
-	     << "\" reverting to previous/default\n";
-}
-
-static bool parse_boolean(const char * progname, const string & config_filename, const pair<const string, string> & pr, bool & error) {
-	switch(pr.second.size()) {
+static bool parse_boolean(const string & value) {
+	switch(value.size()) {
 		case 1:
-			switch(pr.second[0]) {
+			switch(value[0]) {
 				case '0':
 					return false;
 					break;
 				case '1':
 					return true;
 					break;
-				default:
-					print_error(progname, "boolean", config_filename, pr);
-					error = true;
 			}
 			break;
 		case 2:
-			if(pr.second == "no")
+			if(value == "no")
 				return false;
-			else {
-				print_error(progname, "boolean", config_filename, pr);
-				error = true;
-			}
 			break;
 		case 3:
-			if(pr.second == "yes")
+			if(value == "yes")
 				return true;
-			else {
-				print_error(progname, "boolean", config_filename, pr);
-				error = true;
-			}
 			break;
 		case 4:
-			if(pr.second == "true")
+			if(value == "true")
 				return true;
-			else {
-				print_error(progname, "boolean", config_filename, pr);
-				error = true;
-			}
-			break;
+			else break;
 		case 5:
-			if(pr.second == "false")
+			if(value == "false")
 				return false;
-			else {
-				print_error(progname, "boolean", config_filename, pr);
-				error = true;
-			}
 			break;
-		default:
-			print_error(progname, "lengthy-enough (1..5) (actual length: " + to_string(pr.second.size()) + ")", config_filename, pr);
-			error = true;
 	}
 
 
