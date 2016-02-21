@@ -47,4 +47,4 @@ out/dependencies/librust_helpers.a : $(wildcard dependencies/rust_helpers/**.rs)
 
 out/%$(OBJ) : source/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) -Idependencies/cereal/include -Idependencies/tclap/include -c -o$@ $^
+	$(CXX) $(CXXAR) -Idependencies/cereal/include -Idependencies/tclap/include -Idependencies/eigen -c -o$@ $^
