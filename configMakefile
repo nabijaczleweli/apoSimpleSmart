@@ -20,12 +20,17 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+ifeq "$(OS)" "Windows_NT"
+	SYSTEM_TYPE := windows
+else
+	SYSTEM_TYPE := linux
+endif
+
 OBJ := .o
-ARCH := .a
 AR := ar
 RS := rustc
 
 CXXAR := -O3 -std=c++14 -Wall -Wextra
 CCAR := -O3 -std=c11 -Wall -Wextra
-LDAR := -Lout/dependencies -lpdcurses -larmadillo -lrust_helpers
+LDAR := -Lout/dependencies -lpdcurses -larmadillo -lrust_helpers -lseed11
 RSAR := -C opt-level=3 -C ar="$(AR)" --crate-type staticlib --crate-name

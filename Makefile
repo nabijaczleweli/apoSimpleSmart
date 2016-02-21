@@ -29,7 +29,7 @@ OBJECTS := $(patsubst source/%.cpp,out/%.o,$(wildcard source/**.cpp))
 .PHONY : all clean exe rust
 
 
-all : rust exe
+all : rust seed11 exe
 
 clean :
 	rm -rf out
@@ -39,12 +39,21 @@ exe : $(OBJECTS)
 
 rust : out/dependencies/librust_helpers.a
 
+seed11 : out/dependencies/libseed11.a
+
 
 out/dependencies/librust_helpers.a : $(wildcard dependencies/rust_helpers/**.rs)
 	@mkdir -p $(dir $@)
 	cd $(dir $@) && $(RS) $(RSAR) rust_helpers 2>&1 $(foreach s,$^,$(realpath $(s))) | grep "note: library:" | perl -pe "s/note: library: (.+)/-l\1/" > librust_helpers.deps
 
+out/dependencies/libseed11.a : $(foreach suff,system_agnostic $(SYSTEM_TYPE),out/dependencies/seed11/seed11_$(suff).o)
+	@mkdir -p $(dir $@)
+	$(AR) cr $@ $^
 
 out/%$(OBJ) : source/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) -Idependencies/cereal/include -Idependencies/tclap/include -Idependencies/eigen -c -o$@ $^
+	$(CXX) $(CXXAR) -Idependencies/cereal/include -Idependencies/tclap/include -Idependencies/eigen -Idependencies/seed11/include/seed11 -c -o$@ $^
+
+out/dependencies/seed11/%$(OBJ) : dependencies/seed11/src/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXAR) -isystemdependencies/seed11/include -c -o$@ $^
