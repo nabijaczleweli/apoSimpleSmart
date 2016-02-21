@@ -20,15 +20,15 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#include <fstream>
-#include <iostream>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <random>
 #include <limits>
 
 #include <tui.h>
-#include <armadillo>
+#include "Eigen/Core"
+#include "seed11.hpp"
 
 #include "curses.hpp"
 #include "config.hpp"
@@ -38,7 +38,7 @@
 
 
 using namespace std;
-using namespace arma;
+using namespace Eigen;
 
 
 #define BACKSPACE '\x08'
@@ -58,7 +58,7 @@ void display_creditsscreen(WINDOW * parent_window, const bool put_apo_in);
 string display_optionsscreen(WINDOW * parent_window, const string & name);
 void display_tutorialscreen(WINDOW * parent_window);
 void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & highscores);
-void play_game(WINDOW * parent_window, vector<high_data> & highscores);
+void play_game(WINDOW * parent_window, const ass_config & cfg, game_data & gd);
 
 
 constexpr static const chtype right_pointing_moving_thing = ')';
@@ -75,7 +75,6 @@ int main(int argc, const char * const * argv) {
 
 	initscr();
 	quickscope_wrapper _endwin{[]() { endwin(); }};
-	halfdelay(1);
 	curs_set(0);
 	noecho();
 
@@ -89,35 +88,14 @@ int main(int argc, const char * const * argv) {
 
 	window_p main_screen(newwin(config.screen_height, config.screen_width, 0, 0));
 
-	scrollok(main_screen.get(), true);
-	clearok(main_screen.get(), true);
-	for(const string & str : {"apoSimpleSmart"}) {
-		mvwaddstr(main_screen.get(), config.screen_height / 2, (config.screen_width - str.size()) / 2, str.c_str());
-		wrefresh(main_screen.get());
-		bool broke = false;
-		for(auto i = 0u; i < config.screen_height / 2 + 1; ++i) {
-			if(getch() != ERR) {
-				broke = true;
-				break;
-			}
-			wscrl(main_screen.get(), 1);
-			wrefresh(main_screen.get());
-		}
-		if(broke || getch() != ERR) {
-			wclear(main_screen.get());
-			wrefresh(main_screen.get());
-			break;
-		}
-	}
-
-	nocbreak();
 	game_data global_data = load_game_data_from_file();
+	global_data.highscore.emplace_back(high_data{"bulerb", 40, 100});
 
 	bool shall_keep_going = true;
 	while(shall_keep_going)
 		switch(const int val = display_mainscreen(main_screen.get(), config.put_apo_in_screens)) {
 			case mainscreen_selection::start:
-				play_game(main_screen.get(), global_data.highscore);
+				play_game(main_screen.get(), config, global_data);
 				break;
 			case mainscreen_selection::tutorial:
 				wclear(main_screen.get());
@@ -214,7 +192,6 @@ mainscreen_selection display_mainscreen(WINDOW * parent_window, const bool put_a
 	wrefresh(bigstring_message_window.get());
 
 
-	halfdelay(1);
 	raw();
 	nonl();
 	cbreak();
@@ -303,7 +280,6 @@ void display_creditsscreen(WINDOW * parent_window, const bool put_apo_in) {
 	wrefresh(credit_cereal_message_window.get());
 
 
-	halfdelay(1);
 	raw();
 	nonl();
 	cbreak();
@@ -342,7 +318,6 @@ string display_optionsscreen(WINDOW * parent_window, const string & name) {
 	maxX = -1;
 	maxY = -1;
 
-	halfdelay(1);
 	raw();
 	nonl();
 	cbreak();
@@ -447,7 +422,6 @@ void display_tutorialscreen(WINDOW * parent_window) {
 	mvwaddch(direction_message_window.get(), 0, 16, up_pointing_moving_thing | COLOR_PAIR(COLOR_PAIR_GREEN));
 	wrefresh(direction_message_window.get());
 
-	halfdelay(1);
 	raw();
 	nonl();
 	cbreak();
@@ -495,7 +469,6 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 		wrefresh(none_message_window.get());
 	}
 
-	halfdelay(1);
 	raw();
 	nonl();
 	cbreak();
@@ -507,4 +480,93 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 	}
 }
 
-void play_game(WINDOW *, vector<high_data> &) {}
+void play_game(WINDOW * parent_window, const ass_config & cfg, game_data & gd) {
+	enum direction : char { up, right, down, left, nonexistant };
+	enum colour : int { none, blue, red, green, white };
+
+	struct cell {
+		direction dir;
+		colour col;
+		bool in_motion;
+	};
+
+
+	int maxX, maxY;
+	getmaxyx(parent_window, maxY, maxX);
+
+	window_p matrix_window(derwin(parent_window, cfg.matrix_height, cfg.matrix_width, (maxY - cfg.matrix_height) / 2, (maxX - cfg.matrix_width) / 2));
+	touchwin(parent_window);
+	wrefresh(parent_window);
+	wclear(parent_window);
+
+
+	Matrix<cell, Dynamic, Dynamic> cells(cfg.matrix_height, cfg.matrix_width);
+	mt19937 random(seed11::seed_device{}());
+
+	{
+		uniform_int_distribution<short> direction_distro(direction::up, direction::left);
+		discrete_distribution<int> colour_distro({80, 5, 5, 5, 5});
+		for(auto y = 0u; y < cfg.matrix_height; ++y)
+			for(auto x = 0u; x < cfg.matrix_height; ++x)
+				cells(y, x) = {static_cast<direction>(direction_distro(random)), static_cast<colour>(colour_distro(random)), false};
+	}
+
+
+	raw();
+
+	while(true) {
+		auto selected_y = 0u;
+		auto selected_x = 0u;
+
+		{
+			uniform_int_distribution<int> colour_distro(COLOR_PAIR_BLUE, COLOR_PAIR_WHITE);
+			for(auto y = 0u; y < cfg.matrix_height; ++y)
+				for(auto x = 0u; x < cfg.matrix_width; ++x) {
+					const auto & cell = cells(y, x);
+					switch(cell.dir) {
+						case direction::up:
+							mvwaddch(matrix_window.get(), y, x, up_pointing_moving_thing);
+							break;
+						case direction::right:
+							mvwaddch(matrix_window.get(), y, x, right_pointing_moving_thing);
+							break;
+						case direction::down:
+							mvwaddch(matrix_window.get(), y, x, down_pointing_moving_thing);
+							break;
+						case direction::left:
+							mvwaddch(matrix_window.get(), y, x, left_pointing_moving_thing);
+							break;
+						case direction::nonexistant:
+							mvwaddch(matrix_window.get(), y, x, ' ');
+							break;
+					}
+					if(cell.col)
+						mvwchgat(matrix_window.get(), y, x, 1, COLOR_PAIR(cell.col), 0, nullptr);
+				}
+		}
+		mvwchgat(matrix_window.get(), selected_y, selected_x, 1, A_BOLD, 0, nullptr);
+		wrefresh(matrix_window.get());
+
+		switch(wgetch(parent_window)) {
+			case KEY_UP:
+				if(selected_y)
+					--selected_y;
+				break;
+			case KEY_DOWN:
+				if(selected_y >= cfg.matrix_height)
+					++selected_y;
+				break;
+			case KEY_RIGHT:
+				if(selected_x >= cfg.matrix_width)
+					++selected_x;
+				break;
+			case KEY_LEFT:
+				if(selected_x)
+					--selected_x;
+				break;
+			case 'Q':
+			case 'q':
+				return;
+		}
+	}
+}
