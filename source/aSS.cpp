@@ -478,29 +478,20 @@ void display_highscorescreen(WINDOW * parent_window, const vector<high_data> & h
 	wborder(menu_button_window.get(), ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE, ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
 	mvwaddstr(menu_button_window.get(), 1, 1, "Menu");
 	mvwchgat(menu_button_window.get(), 1, 1, 1, A_BOLD, 0, nullptr);
-	wrefresh(description_message_window.get());
-	mvwaddstr(description_message_window.get(), 0, 0, "Name");
-	for(auto i = 4u; i < game_data::max_name_length; ++i)
-		waddch(description_message_window.get(), ' ');
-	waddstr(description_message_window.get(), "|Score");
-	for(auto i = 5u; i < maximal_score_width; ++i)
-		waddch(description_message_window.get(), ' ');
-	waddstr(description_message_window.get(), "|Level");
+	wrefresh(menu_button_window.get());
+
+	wprintw(description_message_window.get(), ("%-" + to_string(game_data::max_name_length) + "s|%-" + to_string(maximal_score_width) + "s|%s").c_str(), "Name",
+	        "Score", "Level");
 	wrefresh(description_message_window.get());
 
 	for(auto i = 0u; i < highscores.size(); ++i) {
 		wmove(highscores_messages_window[i].get(), 0, 0);
-		wprintw(highscores_messages_window[i].get(), "%.*s", highscores[i].name.size(), highscores[i].name.c_str());
-		for(auto j = highscores[i].name.size(); j < game_data::max_name_length; ++j)
-			waddch(highscores_messages_window[i].get(), ' ');
-		wprintw(highscores_messages_window[i].get(), "|%u", highscores[i].score);
-		for(auto j = to_string(highscores[i].score).size(); j < maximal_score_width; ++j)
-			waddch(highscores_messages_window[i].get(), ' ');
-		wprintw(highscores_messages_window[i].get(), "|%hu", highscores[i].level);
+		wprintw(highscores_messages_window[i].get(), ("%-" + to_string(game_data::max_name_length) + "s|%-" + to_string(maximal_score_width) + "u|%hu").c_str(),
+		        highscores[i].name.c_str(), highscores[i].score, highscores[i].level);
 		wrefresh(highscores_messages_window[i].get());
 	}
 	if(!highscores.size()) {
-		mvwaddstr(none_message_window.get(), 0, 0, "None yet! Go make some!");
+		mvwaddstr(none_message_window.get(), 0, 0, "None yet, go make some.");
 		wrefresh(none_message_window.get());
 	}
 
