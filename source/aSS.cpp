@@ -22,6 +22,7 @@
 
 #include <cstring>
 #include <cstdlib>
+#include <fstream>
 #include <cstdio>
 #include <random>
 #include <limits>
@@ -487,7 +488,6 @@ void play_game(WINDOW * parent_window, const ass_config & cfg, game_data & gd) {
 	struct cell {
 		direction dir;
 		colour col;
-		bool in_motion;
 	};
 
 
@@ -508,16 +508,15 @@ void play_game(WINDOW * parent_window, const ass_config & cfg, game_data & gd) {
 		discrete_distribution<int> colour_distro({80, 5, 5, 5, 5});
 		for(auto y = 0u; y < cfg.matrix_height; ++y)
 			for(auto x = 0u; x < cfg.matrix_height; ++x)
-				cells(y, x) = {static_cast<direction>(direction_distro(random)), static_cast<colour>(colour_distro(random)), false};
+				cells(y, x) = {static_cast<direction>(direction_distro(random)), static_cast<colour>(colour_distro(random))};
 	}
 
 
 	raw();
 
+	unsigned int selected_y = 0;
+	unsigned int selected_x = 0;
 	while(true) {
-		auto selected_y = 0u;
-		auto selected_x = 0u;
-
 		{
 			uniform_int_distribution<int> colour_distro(COLOR_PAIR_BLUE, COLOR_PAIR_WHITE);
 			for(auto y = 0u; y < cfg.matrix_height; ++y)
@@ -547,23 +546,71 @@ void play_game(WINDOW * parent_window, const ass_config & cfg, game_data & gd) {
 		mvwchgat(matrix_window.get(), selected_y, selected_x, 1, A_BOLD, 0, nullptr);
 		wrefresh(matrix_window.get());
 
+		int score   = 0;
+		auto & cell = cells(selected_y, selected_x);
 		switch(wgetch(parent_window)) {
-			case KEY_UP:
+			case 'W':
+			case 'w':
 				if(selected_y)
 					--selected_y;
 				break;
-			case KEY_DOWN:
-				if(selected_y >= cfg.matrix_height)
+			case 'S':
+			case 's':
+				if(selected_y < cfg.matrix_height - 1)
 					++selected_y;
 				break;
-			case KEY_RIGHT:
-				if(selected_x >= cfg.matrix_width)
+			case 'D':
+			case 'd':
+				if(selected_x < cfg.matrix_width - 1)
 					++selected_x;
 				break;
-			case KEY_LEFT:
+			case 'A':
+			case 'a':
 				if(selected_x)
 					--selected_x;
 				break;
+			case ';': {
+				if(cell.col != colour::none)
+					break;
+				auto cur_y = selected_y;
+				auto cur_x = selected_x;
+				bool cont  = true;
+				while(cont) {
+					switch(cells(cur_y, cur_x).dir) {
+						case direction::up:
+							if(cur_y) {
+								--cur_y;
+								++score;
+							} else
+								cont = false;
+							break;
+						case direction::right:
+							if(cur_x < cfg.matrix_width) {
+								++cur_x;
+								++score;
+							} else
+								cont = false;
+							break;
+						case direction::down:
+							if(cur_y < cfg.matrix_height) {
+								++cur_y;
+								++score;
+							} else
+								cont = false;
+							break;
+						case direction::left:
+							if(cur_x) {
+								--cur_x;
+								++score;
+							} else
+								cont = false;
+							break;
+						case direction::nonexistant:
+							break;
+					}
+					out << cur_x << ' ' << cur_y << " : " << score << endl;
+				}
+			} break;
 			case 'Q':
 			case 'q':
 				return;
