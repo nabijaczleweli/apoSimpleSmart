@@ -52,7 +52,7 @@ out/dependencies/libseed11.a : $(foreach suff,system_agnostic $(SYSTEM_TYPE),out
 
 out/%$(OBJ) : source/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) -Idependencies/cereal/include -Idependencies/tclap/include -Idependencies/eigen -Idependencies/seed11/include/seed11 -c -o$@ $^
+	$(CXX) $(CXXAR) -Idependencies/cereal/include -Idependencies/tclap/include -Idependencies/eigen -Idependencies/seed11/include -c -o$@ $^
 
 out/dependencies/seed11/%$(OBJ) : dependencies/seed11/src/%.cpp
 	@mkdir -p $(dir $@)

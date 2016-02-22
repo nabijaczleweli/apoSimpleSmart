@@ -28,7 +28,7 @@
 
 #include <tui.h>
 #include "Eigen/Core"
-#include "seed11.hpp"
+#include "seed11/seed_device.hpp"
 
 #include "curses.hpp"
 #include "config.hpp"
